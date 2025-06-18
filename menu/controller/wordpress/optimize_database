@@ -34,6 +34,45 @@ _backup_confirm() {
 
 _backup() {
     _cd_dir /home/"${user}"/"${domain}"/public_html
+    
+    # Check if WP-CLI is available
+    if ! command -v wp &> /dev/null; then
+        printf "%s\n" "${YELLOW}WP-CLI chua duoc cai dat. Dang tien hanh cai dat...${NC}"
+        curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+        chmod +x wp-cli.phar
+        mv wp-cli.phar /usr/local/bin/wp
+        if ! command -v wp &> /dev/null; then
+            printf "%s\n" "${RED}Khong the cai dat WP-CLI. Su dung phuong phap backup truyen thong.${NC}"
+            _backup_traditional
+            return
+        fi
+        printf "%s\n" "${GREEN}Cai dat WP-CLI thanh cong.${NC}"
+    fi
+    
+    # Check if this is a WordPress site and use WP-CLI for backup
+    if wp core is-installed --allow-root 2>/dev/null; then
+        printf "%s\n" "${GREEN}Phat hien WordPress. Su dung WP-CLI de backup...${NC}"
+        
+        if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql" ]]; then
+            rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
+        fi
+        if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql.gz" ]]; then
+            rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql.gz
+        fi
+        if [[ ! -d "/home/backup/${CURRENT_DATE}/${domain}" ]]; then
+            mkdir -p /home/backup/"${CURRENT_DATE}"/"${domain}"
+        fi
+        
+        _cd_dir /home/backup/"${CURRENT_DATE}"/"${domain}"
+        wp db export "${db_name}.sql" --allow-root
+        gzip "${db_name}.sql"
+    else
+        printf "%s\n" "${YELLOW}Khong phat hien WordPress hoac WP-CLI khong hoat dong. Su dung phuong phap backup truyen thong.${NC}"
+        _backup_traditional
+    fi
+}
+
+_backup_traditional() {
     if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql" ]]; then
         rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
     fi

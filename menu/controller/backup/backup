@@ -143,11 +143,44 @@ _backup_source() {
 
 _backup_database() {
     db_name=$(grep -w "db_name" "${USER_DIR}/.${domain}.conf" | cut -f2 -d'=')
+    user=$(grep -w "username" "${USER_DIR}/.${domain}.conf" | cut -f2 -d'=')
     _cd_dir /home/backup/"${CURRENT_DATE}"/"${domain}"
+    
     if [ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql.gz" ]; then
         rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql.gz
     fi
-    mysqldump -uadmin -p"${mysql_pwd}" "${db_name}" | gzip > "${db_name}".sql.gz
+
+    # Check if it's a WordPress site
+    if [[ -f "/home/${user}/${domain}/public_html/wp-config.php" ]]; then
+        # Check if WP-CLI is installed
+        if ! command -v wp &> /dev/null; then
+            echo "Installing WP-CLI..."
+            curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+            chmod +x wp-cli.phar
+            mv wp-cli.phar /usr/local/bin/wp
+        
+            
+            # Install required PHP extensions if missing
+            if ! php -m | grep -q "mysqli"; then
+                apt-get update && apt-get install -y php-mysqli
+            fi
+            if ! php -m | grep -q "curl"; then
+                apt-get update && apt-get install -y php-curl
+            fi
+            if ! php -m | grep -q "mbstring"; then
+                apt-get update && apt-get install -y php-mbstring
+            fi
+        fi
+        
+        # Use WP-CLI to dump database
+        cd /home/"${user}"/"${domain}"/public_html
+        wp db export --allow-root --path=/home/"${user}"/"${domain}"/public_html "${db_name}".sql
+        gzip "${db_name}".sql
+        mv "${db_name}".sql.gz /home/backup/"${CURRENT_DATE}"/"${domain}"/
+    else
+        # Use mysqldump for non-WordPress sites
+        mysqldump -uadmin -p"${mysql_pwd}" "${db_name}" | gzip > "${db_name}".sql.gz
+    fi
 }
 
 _backup_full() {

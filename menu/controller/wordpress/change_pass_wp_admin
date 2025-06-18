@@ -45,21 +45,47 @@ _input() {
         fi
     done
 }
-
 _backup() {
     _cd_dir /home/"${user}"/"${domain}"/public_html
-    if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql" ]]; then
-        rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
+    
+    # Check if WP-CLI is installed
+    if ! command -v wp &> /dev/null; then
+        echo "WP-CLI not found. Installing WP-CLI..."
+        curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+        chmod +x wp-cli.phar
+        sudo mv wp-cli.phar /usr/local/bin/wp
     fi
-    if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql.gz" ]]; then
-        rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql.gz
-    fi
-    if [[ ! -d "/home/backup/${CURRENT_DATE}/${domain}" ]]; then
-        mkdir -p /home/backup/"${CURRENT_DATE}"/"${domain}"
-    fi
+    
+    # Check if this is a WordPress website
+    if wp core is-installed --allow-root 2>/dev/null; then
+        echo "WordPress detected. Using WP-CLI for backup..."
+        if [[ ! -d "/home/backup/${CURRENT_DATE}/${domain}" ]]; then
+            mkdir -p /home/backup/"${CURRENT_DATE}"/"${domain}"
+        fi
+        
+        # Backup database using WP-CLI
+        wp db export /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql --allow-root
+        
+        # Compress the backup
+        gzip /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
+        
+        # Backup files
+        tar -czf /home/backup/"${CURRENT_DATE}"/"${domain}"/files.tar.gz .
+    else
+        echo "Not a WordPress website. Using traditional backup method..."
+        if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql" ]]; then
+            rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
+        fi
+        if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql.gz" ]]; then
+            rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql.gz
+        fi
+        if [[ ! -d "/home/backup/${CURRENT_DATE}/${domain}" ]]; then
+            mkdir -p /home/backup/"${CURRENT_DATE}"/"${domain}"
+        fi
 
-    _cd_dir /home/backup/"${CURRENT_DATE}"/"${domain}"
-    mysqldump -uadmin -p"${mysql_pwd}" "${db_name}" | gzip >"${db_name}".sql.gz
+        _cd_dir /home/backup/"${CURRENT_DATE}"/"${domain}"
+        mysqldump -uadmin -p"${mysql_pwd}" "${db_name}" | gzip >"${db_name}".sql.gz
+    fi
 }
 
 _run() {

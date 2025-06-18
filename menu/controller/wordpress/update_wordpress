@@ -43,15 +43,39 @@ _backup() {
     tar -cpzvf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${domain}".tar.gz \
         --exclude "public_html/wp-content/cache" public_html
 
+    # Check if WP-CLI is installed, install if not
+    if ! command -v wp &> /dev/null; then
+        echo "Installing WP-CLI..."
+        curl -O https://raw.githubusercontent.com/wp-cli/wp-cli/v2.8.1/phar/wp-cli.phar
+        chmod +x wp-cli.phar
+        mv wp-cli.phar /usr/local/bin/wp
+    fi
+
     _cd_dir /home/"${user}"/"${domain}"/public_html
-    if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql" ]]; then
-        rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
+    
+    # Check if it's a WordPress site and use WP-CLI for backup
+    if wp core is-installed --allow-root 2>/dev/null; then
+        echo "Using WP-CLI for WordPress backup..."
+        # Export database using WP-CLI
+        if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql" ]]; then
+            rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
+        fi
+        if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql.gz" ]]; then
+            rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql.gz
+        fi
+        wp db export /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql --allow-root
+        gzip /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
+    else
+        # Fallback to mysqldump for non-WordPress sites
+        if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql" ]]; then
+            rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql
+        fi
+        if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql.gz" ]]; then
+            rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql.gz
+        fi
+        _cd_dir /home/backup/"${CURRENT_DATE}"/"${domain}"
+        mysqldump -uadmin -p"${mysql_pwd}" "${db_name}" | gzip >"${db_name}".sql.gz
     fi
-    if [[ -f "/home/backup/${CURRENT_DATE}/${domain}/${db_name}.sql.gz" ]]; then
-        rm -rf /home/backup/"${CURRENT_DATE}"/"${domain}"/"${db_name}".sql.gz
-    fi
-    _cd_dir /home/backup/"${CURRENT_DATE}"/"${domain}"
-    mysqldump -uadmin -p"${mysql_pwd}" "${db_name}" | gzip >"${db_name}".sql.gz
 }
 
 _update_wp() {
