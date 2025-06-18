@@ -102,7 +102,7 @@ Script được viết bằng shell dùng để cài đặt LEMP Stack (Nginx - 
 
 ## 3. Cách cài đặt
 
-`curl -sO https://scripts.hostvn.net/install && chmod +x install && ./install`
+`curl -sO https://tinyactive.github.io/panel/install && chmod +x install && ./install`
 
 ## 4. Các tính năng sẽ phát triển
 
