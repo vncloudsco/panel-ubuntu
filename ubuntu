@@ -75,8 +75,13 @@ set_dns_server(){
 
 create_source_list(){
     # Backup existing sources.list
-    mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
-    
+    if [[ -f /etc/apt/sources.list ]]; then
+        mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
+    fi
+    # backup file /etc/apt/sources.list.d/ubuntu.sources nếu tồn tại
+    if [[ -f /etc/apt/sources.list.d/ubuntu.sources ]]; then
+        mv /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources."$(date +%Y-%m-%d)"
+    fi
     # Set codename based on OS version
     case "${OS_VER}" in
         "18.04") codename="bionic" ;;
