@@ -19,3 +19,4 @@ optipng_version=0.7.7
 jpegoptim_version=1.4.6
 more_clear_headers_v=0.33
 php_list=php7.4 php7.3 php7.2 php7.1 php7.0 php5.6
+nginx_module_vts_v=0.2.4
