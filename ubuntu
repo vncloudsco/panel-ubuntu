@@ -3,31 +3,32 @@
 ######################################################################
 #           Auto Install & Optimize LEMP Stack on Ubuntu             #
 #                                                                    #
-#                Author: Sanvv - HOSTVN Technical                    #
-#                  Website: https://hostvn.vn                        #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
 #                                                                    #
 #              Please do not remove copyright. Thank!                #
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
 OS_VER=$(grep -oP '(?<=^VERSION_ID=).+' /etc/os-release | tr -d '"')
-LIST_OS_VER_SUPPORT=('18.04' '20.04')
+LIST_OS_VER_SUPPORT=('18.04' '20.04' '22.04' '24.04')
 rm -rf ubuntu
 
 DIR=$(pwd)
 
 # Set link
-SCRIPT_LINK="https://tinyactive.github.io/ubuntu"
+SCRIPT_LINK="https://tinyactive.github.io/panel/ubuntu"
 
 welcome(){
     clear
-    printf "========================================================\n"
-    echo   "                   HOSTVN.VN Scripts                      "
-    echo   "     Auto Install & Optimize LEMP Stack on Ubuntu         "
-    printf " Neu can ho tro vui long lien he %s\n" "kythuat@hostvn.net"
-    printf "========================================================\n"
-    echo ""
-    echo "Chuan bi cai dat..."
+    printf "\033[1;36m╔════════════════════════════════════════════════════════╗\033[0m\n"
+    printf "\033[1;36m║                    \033[1;33mTiny Panel\033[1;36m                           ║\033[0m\n"
+    printf "\033[1;36m║            \033[0;37mBase on HOSTVN.VN Scripts\033[1;36m                    ║\033[0m\n"
+    printf "\033[1;36m║        \033[0;37mAuto Install & Optimize LEMP Stack\033[1;36m               ║\033[0m\n"
+    printf "\033[1;36m║          \033[0;37mContact: contact@manhtuong.net\033[1;36m                 ║\033[0m\n"
+    printf "\033[1;36m╚════════════════════════════════════════════════════════╝\033[0m\n"
+    echo
+    printf "\033[1;32m▶ Preparing installation...\033[0m\n"
     sleep 3
 }
 
@@ -118,6 +119,44 @@ EOsource_list
 
         apt update -y
     fi
+# thêm sources.list và update cho ubuntu 22.04
+    if [ "${OS_VER}" == "22.04" ]; then
+        mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
+        cat >> "/etc/apt/sources.list" << EOsource_list
+deb http://archive.ubuntu.com/ubuntu/ jammy main restricted
+deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted
+deb http://archive.ubuntu.com/ubuntu/ jammy universe
+deb http://archive.ubuntu.com/ubuntu/ jammy-updates universe
+deb http://archive.ubuntu.com/ubuntu/ jammy multiverse
+deb http://archive.ubuntu.com/ubuntu/ jammy-updates multiverse
+deb http://archive.ubuntu.com/ubuntu/ jammy-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu jammy-security main restricted
+deb http://security.ubuntu.com/ubuntu jammy-security universe
+deb http://security.ubuntu.com/ubuntu jammy-security multiverse
+EOsource_list
+
+        apt update -y
+    fi
+# thêm sources.list và update cho ubuntu 24.04
+    if [ "${OS_VER}" == "24.04" ]; then
+        mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
+        cat >> "/etc/apt/sources.list" << EOsource_list
+deb http://archive.ubuntu.com/ubuntu/ lunar main restricted
+deb http://archive.ubuntu.com/ubuntu/ lunar-updates main restricted
+deb http://archive.ubuntu.com/ubuntu/ lunar universe
+deb http://archive.ubuntu.com/ubuntu/ lunar-updates universe
+deb http://archive.ubuntu.com/ubuntu/ lunar multiverse
+deb http://archive.ubuntu.com/ubuntu/ lunar-updates multiverse
+deb http://archive.ubuntu.com/ubuntu/ lunar-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu lunar-security main restricted
+deb http://security.ubuntu.com/ubuntu lunar-security universe
+deb http://security.ubuntu.com/ubuntu lunar-security multiverse
+EOsource_list
+
+        apt update -y
+    fi
+
+
 }
 
 install_requirement(){
