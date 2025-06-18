@@ -45,36 +45,25 @@ fixed_lock_frontend(){
 
 # Remove unnecessary services
 remove_old_service(){
+    # Remove packages in a single command
     apt-get -y remove mysql* mariadb* php* apache2* postfix* rsyslog* nginx* fail2ban
-    rm -rf /etc/nginx/nginx.conf /etc/nginx/alias /etc/nginx/rewrite /etc/nginx/ssl /etc/nginx/wordpress
-    rm -rf /etc/nginx/apps /etc/nginx/extra /etc/nginx/pagespeed /etc/nginx/redirect /etc/nginx/rocket-nginx
-    rm -rf /etc/nginx/web_apps.conf
-    rm -rf /etc/apache2
-    rm -rf /etc/php
-    rm -rf /var/hostvn
-    rm -rf /etc/my.cnf
-    rm -rf /etc/mysql
-    rm -rf /var/lib/mysql
-    rm -rf /run/mysqld
-    rm -rf /etc/fail2ban
-    rm -rf /usr/share/nginx
-    rm -rf /usr/share/nginx_module/
-    rm -rf /usr/lib/nginx/modules
-    rm -rf /usr/bin/hostvn
+    
+    # Remove directories in batches
+    rm -rf /etc/nginx/{nginx.conf,alias,rewrite,ssl,wordpress,apps,extra,pagespeed,redirect,rocket-nginx,web_apps.conf} \
+           /etc/{apache2,php,my.cnf,mysql,fail2ban} \
+           /var/{hostvn,lib/mysql} \
+           /run/mysqld \
+           /usr/{share/nginx,share/nginx_module/,lib/nginx/modules,bin/hostvn}
+    
+    # Clean package cache
     apt-get clean all
-    sed -i '/HOSTVN.VN/d' "$HOME/.bashrc"
-    sed -i '/hostvn/d' "$HOME/.bashrc"
-    sed -i '/filetransfer/d' /etc/ssh/sshd_config
-    sed -i '/Prevent user access/d' /etc/ssh/sshd_config
-    sed -i '/Disable X11/d' /etc/ssh/sshd_config
-    sed -i '/Disable tunneling/d' /etc/ssh/sshd_config
-    sed -i '/Disable port forwarding/d' /etc/ssh/sshd_config
-    sed -i '/Disable network tunneling/d' /etc/ssh/sshd_config
-    sed -i '/Force the connection/d' /etc/ssh/sshd_config
-
-    if [ -f "$DIR/hostvn" ]; then
-        rm -rf "$DIR"/hostvn
-    fi
+    
+    # Remove configuration entries in a single sed command for each file
+    sed -i '/HOSTVN.VN\|hostvn/d' "$HOME/.bashrc"
+    sed -i '/filetransfer\|Prevent user access\|Disable X11\|Disable tunneling\|Disable port forwarding\|Disable network tunneling\|Force the connection/d' /etc/ssh/sshd_config
+    
+    # Remove local script file if exists
+    [[ -f "$DIR/hostvn" ]] && rm -rf "$DIR/hostvn"
 }
 
 set_dns_server(){
@@ -85,78 +74,33 @@ set_dns_server(){
 }
 
 create_source_list(){
-    if [ "${OS_VER}" == "18.04" ]; then
-        mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
-        cat >> "/etc/apt/sources.list" << EOsource_list
-deb http://archive.ubuntu.com/ubuntu/ bionic main restricted
-deb http://archive.ubuntu.com/ubuntu/ bionic-updates main restricted
-deb http://archive.ubuntu.com/ubuntu/ bionic universe
-deb http://archive.ubuntu.com/ubuntu/ bionic-updates universe
-deb http://archive.ubuntu.com/ubuntu/ bionic multiverse
-deb http://archive.ubuntu.com/ubuntu/ bionic-updates multiverse
-deb http://archive.ubuntu.com/ubuntu/ bionic-backports main restricted universe multiverse
-deb http://security.ubuntu.com/ubuntu bionic-security main restricted
-deb http://security.ubuntu.com/ubuntu bionic-security universe
-deb http://security.ubuntu.com/ubuntu bionic-security multiverse
+    # Backup existing sources.list
+    mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
+    
+    # Set codename based on OS version
+    case "${OS_VER}" in
+        "18.04") codename="bionic" ;;
+        "20.04") codename="focal" ;;
+        "22.04") codename="jammy" ;;
+        "24.04") codename="noble" ;;  # Fixed: 24.04 uses "noble", not "lunar"
+        *) return 1 ;;
+    esac
+    
+    # Create sources.list with the appropriate codename
+    cat > "/etc/apt/sources.list" << EOsource_list
+deb http://archive.ubuntu.com/ubuntu/ ${codename} main restricted
+deb http://archive.ubuntu.com/ubuntu/ ${codename}-updates main restricted
+deb http://archive.ubuntu.com/ubuntu/ ${codename} universe
+deb http://archive.ubuntu.com/ubuntu/ ${codename}-updates universe
+deb http://archive.ubuntu.com/ubuntu/ ${codename} multiverse
+deb http://archive.ubuntu.com/ubuntu/ ${codename}-updates multiverse
+deb http://archive.ubuntu.com/ubuntu/ ${codename}-backports main restricted universe multiverse
+deb http://security.ubuntu.com/ubuntu ${codename}-security main restricted
+deb http://security.ubuntu.com/ubuntu ${codename}-security universe
+deb http://security.ubuntu.com/ubuntu ${codename}-security multiverse
 EOsource_list
 
-        apt update -y
-    fi
-    if [ "${OS_VER}" == "20.04" ]; then
-        mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
-        cat >> "/etc/apt/sources.list" << EOsource_list
-deb http://archive.ubuntu.com/ubuntu/ focal main restricted
-deb http://archive.ubuntu.com/ubuntu/ focal-updates main restricted
-deb http://archive.ubuntu.com/ubuntu/ focal universe
-deb http://archive.ubuntu.com/ubuntu/ focal-updates universe
-deb http://archive.ubuntu.com/ubuntu/ focal-updates multiverse
-deb http://archive.ubuntu.com/ubuntu/ focal multiverse
-deb http://archive.ubuntu.com/ubuntu/ focal-backports main restricted universe multiverse
-deb http://security.ubuntu.com/ubuntu focal-security main restricted
-deb http://security.ubuntu.com/ubuntu focal-security universe
-deb http://security.ubuntu.com/ubuntu focal-security multiverse
-EOsource_list
-
-        apt update -y
-    fi
-# thêm sources.list và update cho ubuntu 22.04
-    if [ "${OS_VER}" == "22.04" ]; then
-        mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
-        cat >> "/etc/apt/sources.list" << EOsource_list
-deb http://archive.ubuntu.com/ubuntu/ jammy main restricted
-deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted
-deb http://archive.ubuntu.com/ubuntu/ jammy universe
-deb http://archive.ubuntu.com/ubuntu/ jammy-updates universe
-deb http://archive.ubuntu.com/ubuntu/ jammy multiverse
-deb http://archive.ubuntu.com/ubuntu/ jammy-updates multiverse
-deb http://archive.ubuntu.com/ubuntu/ jammy-backports main restricted universe multiverse
-deb http://security.ubuntu.com/ubuntu jammy-security main restricted
-deb http://security.ubuntu.com/ubuntu jammy-security universe
-deb http://security.ubuntu.com/ubuntu jammy-security multiverse
-EOsource_list
-
-        apt update -y
-    fi
-# thêm sources.list và update cho ubuntu 24.04
-    if [ "${OS_VER}" == "24.04" ]; then
-        mv /etc/apt/sources.list /etc/apt/sources.list."$(date +%Y-%m-%d)"
-        cat >> "/etc/apt/sources.list" << EOsource_list
-deb http://archive.ubuntu.com/ubuntu/ lunar main restricted
-deb http://archive.ubuntu.com/ubuntu/ lunar-updates main restricted
-deb http://archive.ubuntu.com/ubuntu/ lunar universe
-deb http://archive.ubuntu.com/ubuntu/ lunar-updates universe
-deb http://archive.ubuntu.com/ubuntu/ lunar multiverse
-deb http://archive.ubuntu.com/ubuntu/ lunar-updates multiverse
-deb http://archive.ubuntu.com/ubuntu/ lunar-backports main restricted universe multiverse
-deb http://security.ubuntu.com/ubuntu lunar-security main restricted
-deb http://security.ubuntu.com/ubuntu lunar-security universe
-deb http://security.ubuntu.com/ubuntu lunar-security multiverse
-EOsource_list
-
-        apt update -y
-    fi
-
-
+    apt update -y
 }
 
 install_requirement(){
