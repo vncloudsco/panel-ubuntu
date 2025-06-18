@@ -41,7 +41,7 @@ AUTHOR_CONTACT="https://www.facebook.com/groups/hostvn.vn"
 PHPMYADMIN_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "phpmyadmin_version=" | cut -f2 -d'=')
 MARIADB_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "mariadb_version=" | cut -f2 -d'=')
 # shellcheck disable=SC2207
-PHP_LIST=($(curl -s https://scripts.hostvn.net/ubuntu/update/version | grep "php_list=" | cut -f2 -d'='))
+PHP_LIST=($(curl -s ${UPDATE_LINK}/version | grep "php_list=" | cut -f2 -d'='))
 
 # Set Lang
 OPTION_CHANGE_SSH="Ban co muon thay doi port SSH khong ? "
@@ -413,7 +413,8 @@ check_duplicate_php() {
 install_nginx(){
     apt-get install build-essential zlib1g-dev libpcre3 libpcre3-dev unzip uuid-dev -y
     apt autoremove -y
-    UPDATE_LINK="https://scripts.hostvn.net/ubuntu/update"
+    UPDATE_LINK="https://tinyactive.github.io/panel/update"
+    MODULES_LINK="https://tinyactive.github.io/panel/modules"
     MODULE_PATH="/usr/share/nginx_module"
     mkdir -p "${MODULE_PATH}"
     NGINX_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nginx_version=" | cut -f2 -d'=')
@@ -439,11 +440,11 @@ install_nginx(){
 
     cd_dir "${MODULE_PATH}"
     wget -O- http://nginx.org/download/nginx-"${NGINX_VERSION}".tar.gz | tar -xz
-    wget -O- http://scripts.hostvn.net/ubuntu/modules/ngx_cache_purge-"${ngx_cache_purge_version}".tar.gz | tar -xz
-    wget -O- http://scripts.hostvn.net/ubuntu/modules/openssl-OpenSSL_"${openssl_version}".tar.gz | tar -xz
-    wget -O- http://scripts.hostvn.net/ubuntu/modules/pcre-"${pcre_version}".tar.gz | tar -xz
+    wget -O- "${MODULES_LINK}"/ngx_cache_purge-"${ngx_cache_purge_version}".tar.gz | tar -xz
+    wget -O- "${MODULES_LINK}"/openssl-OpenSSL_"${openssl_version}".tar.gz | tar -xz
+    wget -O- "${MODULES_LINK}"/pcre-"${pcre_version}".tar.gz | tar -xz
     wget -O- https://www.zlib.net/zlib-"${zlib_version}".tar.gz | tar -xz
-    wget -O- http://scripts.hostvn.net/ubuntu/modules/headers-more-nginx-module-"${more_clear_headers_v}".tar.gz | tar -xz
+    wget -O- "${MODULES_LINK}"/headers-more-nginx-module-"${more_clear_headers_v}".tar.gz | tar -xz
     wget -O- https://github.com/vozlt/nginx-module-vts/archive/refs/tags/v"${nginx_module_vts_v}".tar.gz | tar -xz
 
     git clone --depth 1 https://github.com/google/ngx_brotli
@@ -645,7 +646,7 @@ install_phpmyadmin() {
     fi
     cd_dir "${DEFAULT_DIR_TOOL}"
 
-    wget -O- https://scripts.hostvn.net/modules/phpMyAdmin-"${PHPMYADMIN_VERSION}"-english.tar.gz | tar -xz
+    wget -O- "${MODULES_LINK}"/phpMyAdmin-"${PHPMYADMIN_VERSION}"-english.tar.gz | tar -xz
 
     mv phpMyAdmin-"${PHPMYADMIN_VERSION}"-english phpmyadmin
     rm -rf phpMyAdmin-"${PHPMYADMIN_VERSION}"-english.zip
@@ -1101,7 +1102,7 @@ mariadb_calculation() {
 install_optipng(){
     optipng_version=$(curl -s ${UPDATE_LINK}/version | grep "optipng_version=" | cut -f2 -d'=')
     cd_dir /opt
-    wget -O- http://scripts.hostvn.net/modules/optipng-"${optipng_version}".tar.gz | tar -xz
+    wget -O- "${MODULES_LINK}"/optipng-"${optipng_version}".tar.gz | tar -xz
     cd_dir optipng-"${optipng_version}"
     ./configure
     make
@@ -1113,7 +1114,7 @@ install_optipng(){
 install_jpegoptim(){
     jpegoptim_version=$(curl -s ${UPDATE_LINK}/version | grep "jpegoptim_version=" | cut -f2 -d'=')
     cd_dir /opt
-    wget -O- http://scripts.hostvn.net/modules/jpegoptim-RELEASE."${jpegoptim_version}".tar.gz | tar -xz
+    wget -O- "${MODULES_LINK}"/jpegoptim-RELEASE."${jpegoptim_version}".tar.gz | tar -xz
     cd_dir jpegoptim-RELEASE."${jpegoptim_version}"
     ./configure
     make && make strip && make install
