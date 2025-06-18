@@ -18,8 +18,8 @@ NC='\033[0m'
 
 OS=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"')
 
-SCRIPT_LINK="https://scripts.hostvn.net/${OS}"
-OS_LIST="centos ubuntu debian almalinux"
+SCRIPT_LINK="https://tinyactive.github.io/panel/${OS}"
+OS_LIST="ubuntu debian"
 RAM_TOTAL=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
 LOW_RAM='400000'
 
@@ -66,13 +66,42 @@ if systemctl is-active --quiet nginx; then
     exit
 fi
 
+# kiểm tra hệ điều hành chỉ hỗ trợ ubuntu, debian không hỗ trợ centos, almalinux hay các hệ điều hành khác
+OS_LIST=("ubuntu" "debian")
+WRONG_OS="Rat tiec he dieu hanh ban dang su dung khong duoc ho tro."
+if [[ "${OS}" == "debian" ]]; then
+    OS="debian"
+elif
+    [[ "${OS}" == "ubuntu" ]]; then
+    OS="ubuntu"
+else
+    OS="unknown"
+    printf "${RED}%s${NC}\n" "${WRONG_OS}"
+fi
+
+#wellcome message  
+welcome() {
+    clear
+    echo "#############################################"
+    echo "#                                           #"
+    echo "#       Auto Install & Optimize LEMP       #"
+    echo "#                                           #"
+    echo "#           Author: TinyPanel - HOSTVN Base #"
+    echo "#             Website: tinyactive.net       #"
+    echo "#                                           #"
+    echo "#############################################"
+}
+
+
+
+
 if [[ " ${OS_LIST[*]} " == *" ${OS} "* ]]; then
     if [[ "${OS}" == "centos" || "${OS}" == "almalinux" ]]; then
         yum -y install dos2unix
     else
         apt -y install dos2unix
     fi
-    curl -sO "${SCRIPT_LINK}"/"${OS}"
+    curl -sO "${SCRIPT_LINK}"
     dos2unix "${OS}"
     chmod +x "${OS}"
     bash "${OS}"

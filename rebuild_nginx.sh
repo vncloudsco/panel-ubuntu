@@ -12,8 +12,9 @@
 
 apt-get install build-essential zlib1g-dev libpcre3 libpcre3-dev unzip uuid-dev -y
 
-UPDATE_LINK="https://scripts.hostvn.net/ubuntu/update"
+UPDATE_LINK="https://tinyactive.github.io/panel/update"
 MODULE_PATH="/usr/share/nginx_module"
+MODULES_LINK="https://tinyactive.github.io/panel/modules"
 mkdir -p "${MODULE_PATH}"
 NGINX_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nginx_version=" | cut -f2 -d'=')
 NPS_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nps_version=" | cut -f2 -d'=')
@@ -39,11 +40,11 @@ wget -O- "${psol_url}" | tar -xz
 
 cd "${MODULE_PATH}" || exit
 wget -O- http://nginx.org/download/nginx-"${NGINX_VERSION}".tar.gz | tar -xz
-wget -O- http://scripts.hostvn.net/ubuntu/modules/ngx_cache_purge-"${ngx_cache_purge_version}".tar.gz | tar -xz
-wget -O- http://scripts.hostvn.net/ubuntu/modules/openssl-OpenSSL_"${openssl_version}".tar.gz | tar -xz
+wget -O- "${MODULES_LINK}"/ngx_cache_purge-"${ngx_cache_purge_version}".tar.gz | tar -xz
+wget -O- "${MODULES_LINK}"/openssl-OpenSSL_"${openssl_version}".tar.gz | tar -xz
 wget -O- ftp://ftp.pcre.org/pub/pcre/pcre-"${pcre_version}".tar.gz | tar -xz
 wget -O- https://www.zlib.net/zlib-"${zlib_version}".tar.gz | tar -xz
-wget -O- http://scripts.hostvn.net/ubuntu/modules/headers-more-nginx-module-"${more_clear_headers_v}".tar.gz | tar -xz
+wget -O- "${MODULES_LINK}"/headers-more-nginx-module-"${more_clear_headers_v}".tar.gz | tar -xz
 
 git clone --depth 1 https://github.com/google/ngx_brotli
 cd ngx_brotli && git submodule update --init
