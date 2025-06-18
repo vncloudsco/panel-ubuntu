@@ -23,11 +23,11 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 SCRIPTS_VERSION="0.1.0"
-IPADDRESS=$(curl -s http://cyberpanel.sh/?ip)
+IPADDRESS=$(curl -s https://ifconfig.me/ip)
 DIR=$(pwd)
 BASH_DIR="/var/hostvn"
 GITHUB_RAW_LINK="https://raw.githubusercontent.com"
-EXT_LINK="https://scripts.hostvn.net"
+EXT_LINK="https://tinyactive.github.io/panel"
 UPDATE_LINK="https://scripts.hostvn.net/update"
 FILE_INFO="${BASH_DIR}/.hostvn.conf"
 HOSTNAME=$(hostname)
@@ -3353,7 +3353,7 @@ END
 add_menu() {
     cd_dir "${BASH_DIR}"
     rm -rf menu hostvn.conf ipaddress menu.tar.gz /usr/bin/hostvn
-    wget "${EXT_LINK}"/ubuntu/menu.tar.gz  > /dev/null
+    wget "${EXT_LINK}"/menu.tar.gz  > /dev/null
     tar -xvf menu.tar.gz && rm -rf menu.tar.gz  > /dev/null
     mkdir -p "${BASH_DIR}"/users
     mkdir -p /var/log/hostvn
