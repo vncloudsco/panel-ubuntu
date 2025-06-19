@@ -60,7 +60,6 @@ rm -rf ./*
 # Download and extract modules
 echo "Downloading modules..."
 {
-    wget -q -O- "https://github.com/apache/incubator-pagespeed-ngx/archive/v${NPS_VERSION}.tar.gz" | tar -xz
     wget -q -O- "http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" | tar -xz
     wget -q -O- "${MODULES_LINK}/ngx_cache_purge-${ngx_cache_purge_version}.tar.gz" | tar -xz
     wget -q -O- "${MODULES_LINK}/openssl-OpenSSL_${openssl_version}.tar.gz" | tar -xz
@@ -69,55 +68,38 @@ echo "Downloading modules..."
     wget -q -O- "${MODULES_LINK}/headers-more-nginx-module-${more_clear_headers_v}.tar.gz" | tar -xz
 } &
 
-# Setup PageSpeed
-nps_dir="incubator-pagespeed-ngx-${NPS_VERSION}"
-NPS_RELEASE_NUMBER=${NPS_VERSION/beta/}
-NPS_RELEASE_NUMBER=${NPS_RELEASE_NUMBER/stable/}
-
 # Wait for downloads to complete
 wait
-
-cd "${nps_dir}"
-psol_url="https://dl.google.com/dl/page-speed/psol/${NPS_RELEASE_NUMBER}.tar.gz"
-[[ -e scripts/format_binary_url.sh ]] && psol_url=$(scripts/format_binary_url.sh PSOL_BINARY_URL)
-wget -q -O- "${psol_url}" | tar -xz
-
 cd "${MODULE_PATH}"
-
-# Clone brotli module
-git clone --depth 1 https://github.com/google/ngx_brotli
-cd ngx_brotli && git submodule update --init --depth 1
-
 # Configure and compile NGINX
 echo "Configuring NGINX..."
 cd "${MODULE_PATH}/nginx-${NGINX_VERSION}/"
 ./configure \
-    --user=nginx \
-    --group=nginx \
-    --prefix=/usr \
-    --sbin-path=/usr/sbin \
-    --conf-path=/etc/nginx/nginx.conf \
-    --pid-path=/var/run/nginx.pid \
-    --http-log-path=/var/log/nginx/access_log \
-    --error-log-path=/var/log/nginx/error_log \
-    --without-mail_imap_module \
-    --without-mail_smtp_module \
-    --with-http_ssl_module \
-    --with-http_realip_module \
-    --with-http_stub_status_module \
-    --with-http_gzip_static_module \
-    --with-http_dav_module \
-    --with-http_v2_module \
-    --with-pcre="../pcre-${pcre_version}" \
-    --with-pcre-jit \
-    --with-zlib="../zlib-${zlib_version}" \
-    --with-openssl="../openssl-OpenSSL_${openssl_version}" \
-    --with-openssl-opt=no-nextprotoneg \
-    --add-module="../ngx_cache_purge-${ngx_cache_purge_version}" \
-    --add-module="../incubator-pagespeed-ngx-${NPS_VERSION}" \
-    --add-module="../headers-more-nginx-module-${more_clear_headers_v}" \
-    --add-module=../ngx_brotli \
-    --with-cc-opt='-D FD_SETSIZE=32768'
+       "--user=nginx" \
+       "--group=nginx" \
+       "--prefix=/var/www/html" \
+       "--sbin-path=/usr/sbin" \
+       "--conf-path=/etc/nginx/nginx.conf" \
+       "--pid-path=/var/run/nginx.pid" \
+       "--http-log-path=/var/log/nginx/access_log" \
+       "--error-log-path=/var/log/nginx/error_log" \
+       "--without-mail_imap_module" \
+       "--without-mail_smtp_module" \
+       "--with-http_ssl_module" \
+       "--with-http_realip_module" \
+       "--with-http_stub_status_module" \
+       "--with-http_gzip_static_module" \
+       "--with-http_dav_module" \
+       "--with-http_v2_module" \
+       "--with-pcre=../pcre-${pcre_version}" \
+       "--with-pcre-jit" \
+       "--with-zlib=../zlib-${zlib_version}" \
+       "--with-openssl=../openssl-OpenSSL_${openssl_version}" \
+       "--with-openssl-opt=no-nextprotoneg" \
+       "--add-module=../ngx_cache_purge-${ngx_cache_purge_version}" \
+       "--add-module=../headers-more-nginx-module-${more_clear_headers_v}" \
+       "--add-module=../nginx-module-vts-${nginx_module_vts_v}" \
+       "--with-cc-opt='-D FD_SETSIZE=32768'" 
 
 echo "Compiling NGINX..."
 make -j"$(nproc)" && make install
