@@ -23,7 +23,6 @@ Script được viết bằng shell dùng để cài đặt LEMP Stack (Nginx - 
 - Cho phép lựa chọn phiên bản PHP: 5.6, 7.0, 7.1, 7.2, 7.3, 7.4, 8.0
 - phpMyAdmin 4.9.x nếu cài đặt PHP mặc định là 5.6, phpMyAdmin 5.0.x nếu cài đặt PHP mặc định là 7.x.
 - Cấu hình Nginx FastCGI cache
-- Cấu hình Nginx Pagespeed
 - Cài đặt PHPMemcachedAdmin, phpRedisAdmin, Opcache Dashboard.
 - Cài đặt memcached, redis cache. (Mặc định sẽ không bật).
 - Cài đặt Fail2ban.

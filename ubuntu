@@ -47,9 +47,8 @@ fixed_lock_frontend(){
 remove_old_service(){
     # Remove packages in a single command
     apt-get -y remove mysql* mariadb* php* apache2* postfix* rsyslog* nginx* fail2ban
-    
-    # Remove directories in batches
-    rm -rf /etc/nginx/{nginx.conf,alias,rewrite,ssl,wordpress,apps,extra,pagespeed,redirect,rocket-nginx,web_apps.conf} \
+      # Remove directories in batches
+    rm -rf /etc/nginx/{nginx.conf,alias,rewrite,ssl,wordpress,apps,extra,redirect,rocket-nginx,web_apps.conf} \
            /etc/{apache2,php,my.cnf,mysql,fail2ban} \
            /var/{hostvn,lib/mysql} \
            /run/mysqld \
