@@ -492,6 +492,17 @@ install_nginx(){
         exit 1
     fi
 
+    # kiểm tra sự tồn tại của file /usr/sbin/nginx và prefix sau khi build 
+    if [ ! -f "/usr/sbin/nginx" ]; then
+        echo "Nginx binary not found in /usr/sbin/nginx. Please check the build process."
+        exit 1
+    fi
+    if [ ! -d "/var/www/html" ]; then
+        echo "Nginx prefix directory /var/www/html not found. Please check the build process."
+        exit 1
+    fi
+
+
     if [[ -d "/usr/lib/nginx/modules" && ! -d "/etc/nginx/modules" ]]; then
         ln -s /usr/lib/nginx/modules /etc/nginx/modules
     fi
