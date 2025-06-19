@@ -109,20 +109,90 @@ EOsource_list
 }
 
 install_requirement(){
+    # Update package lists and upgrade system
+    printf "\033[1;32m▶ Updating system packages...\033[0m\n"
     apt-get update -y
     apt-get upgrade -y
     apt-get autoremove -y
-    apt-get install build-essential gcc g++ make flex bison openssl libssl-dev perl perl-base perl-modules libperl-dev \
-        libperl4-corelibs-perl libwww-perl libaio1 libaio-dev gifsicle webp libde265-dev \
-        zlib1g zlib1g-dev libcap-dev cron bzip2 zip automake autoconf libtool cmake python libdb-dev libsasl2-dev \
-        libncurses5 libncurses5-dev libsystemd-dev bind9 dnsutils quota patch logrotate rsyslog libc6-dev libexpat1-dev \
-        libcrypt-openssl-rsa-perl libnuma-dev libnuma1 git dos2unix ipcalc unzip net-tools wget apache2-utils grc \
-        libjpeg-dev libpng-dev libtiff-dev libgif-dev libwebp-dev imagemagick libpcre3 libpcre3-dev uuid-dev \
-        gnupg2 ca-certificates lsb-release apache2-dev libxml2-dev libcurl4-openssl-dev liblmdb-dev libgeoip-dev pkgconf \
-        libpcre++-dev libyajl-dev apt-utils htop nano supervisor bc libmaxminddb-dev -y
-
+    
+    printf "\033[1;32m▶ Installing required packages...\033[0m\n"
+    
+    # Core development tools
+    local dev_packages=(
+        "build-essential" "gcc" "g++" "make" "flex" "bison" "cmake"
+        "automake" "autoconf" "libtool" "patch" "git" "dos2unix"
+    )
+    
+    # SSL and security packages
+    local ssl_packages=(
+        "openssl" "libssl-dev" "ca-certificates" "gnupg2"
+        "libcrypt-openssl-rsa-perl"
+    )
+    
+    # Perl packages
+    local perl_packages=(
+        "perl" "perl-base" "perl-modules" "libperl-dev"
+        "libperl4-corelibs-perl" "libwww-perl"
+    )
+    
+    # Image processing packages
+    local image_packages=(
+        "gifsicle" "webp" "libde265-dev" "libjpeg-dev" "libpng-dev"
+        "libtiff-dev" "libgif-dev" "libwebp-dev" "imagemagick"
+    )
+    
+    # Database and system libraries
+    local system_packages=(
+        "libaio1" "libaio-dev" "libdb-dev" "libsasl2-dev" "libnuma-dev"
+        "libnuma1" "libncurses5" "libncurses5-dev" "libsystemd-dev"
+        "libmaxminddb-dev" "liblmdb-dev"
+    )
+    
+    # Compression and archive tools
+    local compression_packages=(
+        "zlib1g" "zlib1g-dev" "bzip2" "zip" "unzip"
+    )
+    
+    # Network and web packages
+    local network_packages=(
+        "libcurl4-openssl-dev" "libxml2-dev" "apache2-dev" "apache2-utils"
+        "libpcre3" "libpcre3-dev" "libpcre++-dev" "libgeoip-dev"
+        "net-tools" "wget" "bind9" "dnsutils" "ipcalc"
+    )
+    
+    # System utilities
+    local utility_packages=(
+        "libcap-dev" "cron" "quota" "logrotate" "rsyslog" "libc6-dev"
+        "libexpat1-dev" "uuid-dev" "lsb-release" "pkgconf" "libyajl-dev"
+        "apt-utils" "htop" "nano" "supervisor" "bc" "grc" "python"
+    )
+    
+    # Combine all packages
+    local all_packages=(
+        "${dev_packages[@]}"
+        "${ssl_packages[@]}"
+        "${perl_packages[@]}"
+        "${image_packages[@]}"
+        "${system_packages[@]}"
+        "${compression_packages[@]}"
+        "${network_packages[@]}"
+        "${utility_packages[@]}"
+    )
+    
+    # Install all packages
+    if apt-get install "${all_packages[@]}" -y; then
+        printf "\033[1;32m▶ Package installation completed successfully.\033[0m\n"
+    else
+        printf "\033[1;31m▶ Error: Package installation failed.\033[0m\n"
+        exit 1
+    fi
+    
+    # Stop and disable supervisor service
+    printf "\033[1;32m▶ Configuring supervisor service...\033[0m\n"
     service supervisor stop
     systemctl disable supervisor
+    
+    printf "\033[1;32m▶ Requirement installation completed.\033[0m\n"
 }
 
 create_swap(){
