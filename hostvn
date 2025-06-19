@@ -1268,7 +1268,7 @@ http {
 
     include /etc/nginx/extra/nginx_cache.conf;
     include /etc/nginx/extra/gzip.conf;
-    include /etc/nginx/extra/brotli.conf;
+    # include /etc/nginx/extra/brotli.conf;
     include /etc/nginx/extra/ssl.conf;
     include /etc/nginx/extra/cloudflare.conf;
     include /etc/nginx/web_apps.conf;
