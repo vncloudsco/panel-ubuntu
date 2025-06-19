@@ -447,12 +447,15 @@ install_nginx(){
     wget -O- "${MODULES_LINK}"/headers-more-nginx-module-"${more_clear_headers_v}".tar.gz | tar -xz
     wget -O- https://github.com/vozlt/nginx-module-vts/archive/refs/tags/v"${nginx_module_vts_v}".tar.gz | tar -xz
 
-    git clone --depth 1 https://github.com/google/ngx_brotli
-    cd_dir ngx_brotli && git submodule update --init --recursive
-    cd_dir deps/brotli && mkdir -p out && cd_dir out
-    cmake .. && make -j "$(nproc)"
+    git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli
+    cd_dir ngx_brotli/deps/brotli 
+    mkdir -p out && cd_dir out
+    cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed ..
+    cmake --build . --config Release --target brotlienc
 
     cd_dir "${MODULE_PATH}"/nginx-"${NGINX_VERSION}"/
+    export CFLAGS="-m64 -march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
+    export LDFLAGS="-m64 -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
     ./configure \
         "--user=nginx" \
         "--group=nginx" \
