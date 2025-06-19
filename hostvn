@@ -428,11 +428,11 @@ install_nginx(){
 
     cd_dir "${MODULE_PATH}"
 
-    wget -O- https://github.com/apache/incubator-pagespeed-ngx/archive/v"${NPS_VERSION}".tar.gz | tar -xz
-    nps_dir=$(find . -name "*pagespeed-ngx-${NPS_VERSION}" -type d)
-    cd_dir "$nps_dir"
-    NPS_RELEASE_NUMBER=${NPS_VERSION/beta/}
-    NPS_RELEASE_NUMBER=${NPS_VERSION/stable/}
+    # wget -O- https://github.com/apache/incubator-pagespeed-ngx/archive/v"${NPS_VERSION}".tar.gz | tar -xz
+    # nps_dir=$(find . -name "*pagespeed-ngx-${NPS_VERSION}" -type d)
+    # cd_dir "$nps_dir"
+    # NPS_RELEASE_NUMBER=${NPS_VERSION/beta/}
+    # NPS_RELEASE_NUMBER=${NPS_VERSION/stable/}
 
     psol_url=https://dl.google.com/dl/page-speed/psol/${NPS_RELEASE_NUMBER}.tar.gz
     [ -e scripts/format_binary_url.sh ] && psol_url=$(scripts/format_binary_url.sh PSOL_BINARY_URL)
@@ -447,15 +447,15 @@ install_nginx(){
     wget -O- "${MODULES_LINK}"/headers-more-nginx-module-"${more_clear_headers_v}".tar.gz | tar -xz
     wget -O- https://github.com/vozlt/nginx-module-vts/archive/refs/tags/v"${nginx_module_vts_v}".tar.gz | tar -xz
 
-    git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli
-    cd_dir ngx_brotli/deps/brotli 
-    mkdir -p out && cd_dir out
-    cmake -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=OFF \
-        -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-        -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-        -DCMAKE_INSTALL_PREFIX=./installed ..
-    cmake --build . --config Release --target brotlienc
+    # git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli
+    # cd_dir ngx_brotli/deps/brotli 
+    # mkdir -p out && cd_dir out
+    # cmake -DCMAKE_BUILD_TYPE=Release \
+    #     -DBUILD_SHARED_LIBS=OFF \
+    #     -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+    #     -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+    #     -DCMAKE_INSTALL_PREFIX=./installed ..
+    # cmake --build . --config Release --target brotlienc
 
     cd_dir "${MODULE_PATH}"/nginx-"${NGINX_VERSION}"/
     export CFLAGS="-m64 -march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
@@ -486,9 +486,7 @@ install_nginx(){
         "--with-openssl=../openssl-OpenSSL_${openssl_version}" \
         "--with-openssl-opt=no-nextprotoneg" \
         "--add-module=../ngx_cache_purge-${ngx_cache_purge_version}" \
-        "--add-module=../incubator-pagespeed-ngx-${NPS_VERSION}" \
         "--add-module=../headers-more-nginx-module-${more_clear_headers_v}" \
-        "--add-module=../ngx_brotli" \
         "--add-module=../nginx-module-vts-${nginx_module_vts_v}" \
         "--with-cc-opt='-D FD_SETSIZE=32768'" \
         "--with-ld-opt="-lpthread""
