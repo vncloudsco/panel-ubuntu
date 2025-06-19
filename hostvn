@@ -460,6 +460,8 @@ install_nginx(){
     cd_dir "${MODULE_PATH}"/nginx-"${NGINX_VERSION}"/
     export CFLAGS="-m64 -march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
     export LDFLAGS="-m64 -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
+    ln -s "$(find /usr/lib -type f -name "libbrotlienc*")" /usr/lib/libbrotlienc.so
+    ln -s "$(find /usr/lib -type f -name "libbrotlicommon*")" /usr/lib/libbrotlicommon.so
     ./configure \
         "--user=nginx" \
         "--group=nginx" \
