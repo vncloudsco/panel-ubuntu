@@ -454,7 +454,7 @@ install_nginx(){
     ./configure \
         "--user=nginx" \
         "--group=nginx" \
-        "--prefix=/usr" \
+        "--prefix=/var/www/html" \
         "--sbin-path=/usr/sbin" \
         "--conf-path=/etc/nginx/nginx.conf" \
         "--pid-path=/var/run/nginx.pid" \
@@ -480,7 +480,17 @@ install_nginx(){
         "--add-module=../nginx-module-vts-${nginx_module_vts_v}" \
         "--with-cc-opt='-D FD_SETSIZE=32768'"
 
+    if [ $? -ne 0 ]; then
+        echo "Configure failed! Exiting..."
+        exit 1
+    fi
+
     make && make install
+    
+    if [ $? -ne 0 ]; then
+        echo "Make/Install failed! Exiting..."
+        exit 1
+    fi
 
     if [[ -d "/usr/lib/nginx/modules" && ! -d "/etc/nginx/modules" ]]; then
         ln -s /usr/lib/nginx/modules /etc/nginx/modules
