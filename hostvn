@@ -462,6 +462,7 @@ install_nginx(){
     export LDFLAGS="-m64 -Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections"
     ln -s "$(find /usr/lib -type f -name "libbrotlienc*")" /usr/lib/libbrotlienc.so
     ln -s "$(find /usr/lib -type f -name "libbrotlicommon*")" /usr/lib/libbrotlicommon.so
+    export CXXFLAGS="-Dsys_siglist=__sys_siglist"
     ./configure \
         "--user=nginx" \
         "--group=nginx" \
@@ -489,7 +490,8 @@ install_nginx(){
         "--add-module=../headers-more-nginx-module-${more_clear_headers_v}" \
         "--add-module=../ngx_brotli" \
         "--add-module=../nginx-module-vts-${nginx_module_vts_v}" \
-        "--with-cc-opt='-D FD_SETSIZE=32768'"
+        "--with-cc-opt='-D FD_SETSIZE=32768'" \
+        "--with-ld-opt="-lpthread""
 
     if [ $? -ne 0 ]; then
         echo "Configure failed! Exiting..."
