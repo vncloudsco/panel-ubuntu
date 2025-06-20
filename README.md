@@ -31,7 +31,7 @@ Script được viết bằng shell dùng để cài đặt LEMP Stack (Nginx - 
 - Cung cấp Menu nâng cấp Nginx, MariaDB, PHP, Redis, Memcached, phpMyAdmin.
 - Cài đặt WP-CLI, Composer, supervisor, Rclone.
 - Cài đặt: ClamAV, ImunifyAV.
-- KHÔNG THU THẬP BẤT KỲ THÔNG TIN GÌ TRÊN VPS CỦA BẠN.
+- KHÔNG THU THẬP BẤT KỲ THÔNG TIN GÌ TRÊN VPS CỦA BẠN KỂ CẢ IP MỌI THỨ ĐƯỢC LƯU TRỮ TRÊN GITHUB CÔNG KHAI
 
 ### 1.2. Tối ưu
 
@@ -140,6 +140,4 @@ Script được viết bằng shell dùng để cài đặt LEMP Stack (Nginx - 
 ## 9. Contributors & Credits
 ### Developers / Maintainers
 - Sanvv
-
-### Contributors
-
+- Mạnh Tường
