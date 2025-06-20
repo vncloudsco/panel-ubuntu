@@ -15,8 +15,8 @@ source /var/hostvn/menu/helpers/function
 
 _select_backup_location() {
     clear
-    PS3="${INPUT_SELECT} [ 1 - 4 ]: "
-    location_options=("VPS (Local)" "Google Drive" "OneDrive" "Cancel")
+    PS3="${INPUT_SELECT} [ 1 - 5 ]: "
+    location_options=("VPS (Local)" "Google Drive" "OneDrive" "Telegram" "Cancel")
     select opt_location in "${location_options[@]}"; do
         case $opt_location in
         "VPS (Local)")
@@ -29,6 +29,10 @@ _select_backup_location() {
             ;;
         "OneDrive")
             location="onedrive"
+            break
+            ;;
+        "Telegram")
+            location="telegram"
             break
             ;;
         "Cancel")
@@ -283,6 +287,15 @@ else
                     else
                         _run
                     fi
+                elif [ "${location}" == "telegram" ]; then
+                    source /var/hostvn/menu/controller/backup/backup_telegram
+                    if _run_telegram_backup "${domain}" "${type}"; then
+                        notify="${GREEN}Backup va gui len Telegram thanh cong.${NC}"
+                    else
+                        notify="${RED}Co loi xay ra khi backup len Telegram.${NC}"
+                    fi
+                    clear
+                    printf "%s\n" "${notify}"
                 else
                     _run
                 fi

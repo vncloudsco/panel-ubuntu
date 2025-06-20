@@ -356,6 +356,10 @@ connect_onedrive(){
     . /var/hostvn/menu/controller/backup/connect_ondrive
 }
 
+connect_telegram(){
+    . /var/hostvn/menu/controller/backup/connect_telegram
+}
+
 delete_connect_google_drive(){
     . /var/hostvn/menu/controller/backup/delete_connect_google_drive
 }
@@ -454,6 +458,10 @@ cron_backup_google(){
 
 cron_backup_onedrive(){
     . /var/hostvn/menu/controller/cronjob/backup_onedrive
+}
+
+cron_backup_telegram(){
+    . /var/hostvn/menu/controller/cronjob/backup_telegram
 }
 
 cron_destroy(){
