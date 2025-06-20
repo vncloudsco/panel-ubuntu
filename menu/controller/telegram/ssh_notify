@@ -18,7 +18,7 @@ USERID="$TELEGRAM_ID"
 KEY="$TELEGRAM_TOKEN"
 
 TIMEOUT="10"
-URL="https://api.telegram.org/bot\$KEY/sendMessage"
+URL="https://api-tele.tinyactive.com/bot\$KEY/sendMessage"
 DATE_EXEC="\$(date "+%d %b %Y %H:%M")"
 TMPFILE='/tmp/ipinfo-\$DATE_EXEC.txt'
 

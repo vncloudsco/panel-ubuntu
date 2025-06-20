@@ -21,7 +21,7 @@ PHP2_RELEASE=\$(grep -w "php2_release" "/var/hostvn/.hostvn.conf" | cut -f2 -d'=
 CHAT_ID="$TELEGRAM_ID"
 TOKEN="$TELEGRAM_TOKEN"
 TIMEOUT="10"
-URL="https://api.telegram.org/bot\$TOKEN/sendMessage"
+URL="https://api-tele.tinyactive.com/bot\$TOKEN/sendMessage"
 DATE_EXEC="\$(date "+%d %b %Y %H:%M")"
 NGINX_STATUS=\$(systemctl is-active nginx)
 MARIADB_STATUS=\$(systemctl is-active mariadb)
