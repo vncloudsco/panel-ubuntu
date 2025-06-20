@@ -89,6 +89,7 @@ Script được viết bằng shell dùng để cài đặt LEMP Stack (Nginx - 
 
 ### 1.5. Sao lưu/Khôi phục dữ liệu
 - Backup và restore dữ liệu từ Google Drive với Rclone.
+- Backup lên Telegram thông qua Proxy API và không hỗ trợ restore trong tools . ([chi tiết tính năng](https://tiny-panel.gitbook.io/tiny-panel-docs/telegram?fallback=true))
 - Backup, restore tại Local.
 - Thiết lập số bản backup lưu trữ.
 - Quản lý các bản sao lưu.
