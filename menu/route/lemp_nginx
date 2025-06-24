@@ -9,7 +9,6 @@
 #              Please do not remove copyright. Thank!                #
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
-
 CHOICE=1
 MODULES_LINK="https://tinyactive.github.io/panel/modules"
 nginx_v=$(
