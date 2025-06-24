@@ -34,8 +34,8 @@ HOSTNAME=$(hostname)
 PHP2_RELEASE="no"
 
 # Copyright
-AUTHOR="HOSTVN.VN"
-AUTHOR_CONTACT="https://www.facebook.com/groups/hostvn.vn"
+AUTHOR="TinyActive.com"
+AUTHOR_CONTACT="https://github.com/TinyActive"
 
 # Service Version
 PHPMYADMIN_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "phpmyadmin_version=" | cut -f2 -d'=')
