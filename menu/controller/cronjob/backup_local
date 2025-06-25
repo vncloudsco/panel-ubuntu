@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _select_time(){
     echo "Lua chon thoi gian ?"
@@ -66,7 +66,7 @@ _create_cron(){
     cron_exists=$(crontab -l | grep -w 'backup_local')
     if [ -z "${cron_exists}" ]; then
         crontab -l > backuplocal
-        echo "${time} bash /var/hostvn/menu/cronjob/backup_local >/dev/null 2>&1" >> backuplocal
+        echo "${time} bash /var/tinycp/menu/cronjob/backup_local >/dev/null 2>&1" >> backuplocal
         crontab backuplocal
         rm -rf backuplocal
     fi

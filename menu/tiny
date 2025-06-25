@@ -11,12 +11,12 @@
 ######################################################################
 
 # shellcheck disable=SC2154
-source /var/hostvn/.hostvn.conf
-source /var/hostvn/menu/route/parent
-source /var/hostvn/menu/helpers/variable_common
-source /var/hostvn/ipaddress
-# shellcheck source=/var/hostvn/menu/lang/*
-source /var/hostvn/menu/lang/"${lang}"
+source /var/tinycp/.hostvn.conf
+source /var/tinycp/menu/route/parent
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/ipaddress
+# shellcheck source=/var/tinycp/menu/lang/*
+source /var/tinycp/menu/lang/"${lang}"
 
 CHOICE=1
 

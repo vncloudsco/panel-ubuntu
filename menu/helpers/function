@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/.hostvn.conf
-source /var/hostvn/menu/validate/rule
+source /var/tinycp/.hostvn.conf
+source /var/tinycp/menu/validate/rule
 
 _cd_dir(){
     cd "$1" || exit

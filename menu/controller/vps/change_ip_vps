@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _confirm(){
     while true
@@ -43,8 +43,8 @@ _input_ip(){
 
 _run(){
     sed -i "s/${IPADDRESS}/${new_ip}/g" "${NGINX_CONF_DIR}"/web_apps.conf
-    sed -i '/IPADDRESS/d' /var/hostvn/ipaddress
-    cat >> "/var/hostvn/ipaddress" <<EOchange_ip
+    sed -i '/IPADDRESS/d' /var/tinycp/ipaddress
+    cat >> "/var/tinycp/ipaddress" <<EOchange_ip
 IPADDRESS="${new_ip}"
 EOchange_ip
     if nginx -t; then

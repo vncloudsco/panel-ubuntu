@@ -48,8 +48,8 @@ _delete_ssh_notify(){
 }
 
 _delete_disk_notify(){
-    if [ -f /var/hostvn/telegram/diskNotify.sh ]; then
-        rm -rf /var/hostvn/telegram/diskNotify.sh
+    if [ -f /var/tinycp/telegram/diskNotify.sh ]; then
+        rm -rf /var/tinycp/telegram/diskNotify.sh
         cron_exists=$(crontab -l | grep -w 'diskNotify')
         if [ -n "${cron_exists}" ]; then
             crontab -u root -l | grep -v "diskNotify" | crontab -u root -
@@ -61,8 +61,8 @@ _delete_disk_notify(){
 }
 
 _delete_service_notify(){
-    if [ -f /var/hostvn/telegram/servicesNotify.sh ]; then
-        rm -rf /var/hostvn/telegram/servicesNotify.sh
+    if [ -f /var/tinycp/telegram/servicesNotify.sh ]; then
+        rm -rf /var/tinycp/telegram/servicesNotify.sh
         cron_exists=$(crontab -l | grep -w 'servicesNotify')
         if [ -n "${cron_exists}" ]; then
             crontab -u root -l | grep -v "servicesNotify" | crontab -u root -

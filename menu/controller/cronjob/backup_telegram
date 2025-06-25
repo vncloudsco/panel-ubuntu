@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _select_type() {
     echo "Lua chon kieu backup Telegram?"
@@ -68,7 +68,7 @@ _set_backup_type() {
 }
 
 _create_cron_backup_one() {
-    cat > "/var/hostvn/menu/cronjob/backup_telegram_one" << EOF
+    cat > "/var/tinycp/menu/cronjob/backup_telegram_one" << EOF
 #!/bin/bash
 
 ######################################################################
@@ -79,15 +79,15 @@ _create_cron_backup_one() {
 #                                                                    #
 ######################################################################
 
-source /var/hostvn/.hostvn.conf
-source /var/hostvn/menu/helpers/variable_common
-source /var/hostvn/menu/controller/backup/backup_telegram
+source /var/tinycp/.hostvn.conf
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/menu/controller/backup/backup_telegram
 
 domain="${domain}"
 backup_type="${backup_type}"
 
 # Check if Telegram is configured
-if [ ! -f "/var/hostvn/telegram/.telegram_backup_config" ]; then
+if [ ! -f "/var/tinycp/telegram/.telegram_backup_config" ]; then
     echo "Telegram backup not configured. Skipping backup for \${domain}"
     exit 1
 fi
@@ -97,7 +97,7 @@ if [ ! -f "\${USER_DIR}/.\${domain}.conf" ]; then
     echo "Domain \${domain} no longer exists. Removing cron job."
     # Remove this cron job
     crontab -l | grep -v "backup_telegram_one" | crontab -
-    rm -f "/var/hostvn/menu/cronjob/backup_telegram_one"
+    rm -f "/var/tinycp/menu/cronjob/backup_telegram_one"
     exit 1
 fi
 
@@ -109,20 +109,20 @@ else
 fi
 EOF
 
-    chmod +x "/var/hostvn/menu/cronjob/backup_telegram_one"
+    chmod +x "/var/tinycp/menu/cronjob/backup_telegram_one"
     
     # Add to crontab
     cron_exists=$(crontab -l | grep -w 'backup_telegram_one')
     if [ -z "${cron_exists}" ]; then
         crontab -l > telegram_backup_one
-        echo "${time} bash /var/hostvn/menu/cronjob/backup_telegram_one >/dev/null 2>&1" >> telegram_backup_one
+        echo "${time} bash /var/tinycp/menu/cronjob/backup_telegram_one >/dev/null 2>&1" >> telegram_backup_one
         crontab telegram_backup_one
         rm -f telegram_backup_one
     fi
 }
 
 _create_cron_backup_all() {
-    cat > "/var/hostvn/menu/cronjob/backup_telegram_all" << EOF
+    cat > "/var/tinycp/menu/cronjob/backup_telegram_all" << EOF
 #!/bin/bash
 
 ######################################################################
@@ -133,14 +133,14 @@ _create_cron_backup_all() {
 #                                                                    #
 ######################################################################
 
-source /var/hostvn/.hostvn.conf
-source /var/hostvn/menu/helpers/variable_common
-source /var/hostvn/menu/controller/backup/backup_telegram
+source /var/tinycp/.hostvn.conf
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/menu/controller/backup/backup_telegram
 
 backup_type="${backup_type}"
 
 # Check if Telegram is configured
-if [ ! -f "/var/hostvn/telegram/.telegram_backup_config" ]; then
+if [ ! -f "/var/tinycp/telegram/.telegram_backup_config" ]; then
     echo "Telegram backup not configured. Skipping backup."
     exit 1
 fi
@@ -168,13 +168,13 @@ for users in /home/*; do
 done
 EOF
 
-    chmod +x "/var/hostvn/menu/cronjob/backup_telegram_all"
+    chmod +x "/var/tinycp/menu/cronjob/backup_telegram_all"
     
     # Add to crontab
     cron_exists=$(crontab -l | grep -w 'backup_telegram_all')
     if [ -z "${cron_exists}" ]; then
         crontab -l > telegram_backup_all
-        echo "${time} bash /var/hostvn/menu/cronjob/backup_telegram_all >/dev/null 2>&1" >> telegram_backup_all
+        echo "${time} bash /var/tinycp/menu/cronjob/backup_telegram_all >/dev/null 2>&1" >> telegram_backup_all
         crontab telegram_backup_all
         rm -f telegram_backup_all
     fi
@@ -198,7 +198,7 @@ _backup_one() {
                     printf "%s\n" "${RED}Huy tao cronjob.${NC}"
                 else
                     # Check if Telegram is configured
-                    if [ ! -f "/var/hostvn/telegram/.telegram_backup_config" ]; then
+                    if [ ! -f "/var/tinycp/telegram/.telegram_backup_config" ]; then
                         printf "%s\n" "${RED}Chua cau hinh Telegram Backup. Vui long cau hinh truoc.${NC}"
                         return
                     fi
@@ -230,7 +230,7 @@ _backup_all() {
             printf "%s\n" "${RED}Huy tao cronjob.${NC}"
         else
             # Check if Telegram is configured
-            if [ ! -f "/var/hostvn/telegram/.telegram_backup_config" ]; then
+            if [ ! -f "/var/tinycp/telegram/.telegram_backup_config" ]; then
                 printf "%s\n" "${RED}Chua cau hinh Telegram Backup. Vui long cau hinh truoc.${NC}"
                 return
             fi
@@ -265,7 +265,7 @@ domain=""
 type=""
 
 # Check if Telegram is configured before proceeding
-if [ ! -f "/var/hostvn/telegram/.telegram_backup_config" ]; then
+if [ ! -f "/var/tinycp/telegram/.telegram_backup_config" ]; then
     clear
     printf "%s\n" "${RED}Chua cau hinh Telegram Backup.${NC}"
     printf "%s\n" "${YELLOW}Vui long cau hinh Telegram Backup truoc khi tao cronjob.${NC}"

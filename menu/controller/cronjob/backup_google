@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _create_drive_connect(){
     while true
@@ -129,7 +129,7 @@ _create_cron_backup_all(){
     if [ -z "${cron_all_exists}" ]; then
         _delete_old_backup_cron
         crontab -l > backupgg
-        echo "${time} bash /var/hostvn/menu/cronjob/gg_drive_all >/dev/null 2>&1" >> backupgg
+        echo "${time} bash /var/tinycp/menu/cronjob/gg_drive_all >/dev/null 2>&1" >> backupgg
         crontab backupgg
         rm -rf backupgg
     fi
@@ -140,7 +140,7 @@ _create_cron_backup_one(){
     if [ -z "${cron_one_exists}" ]; then
         _delete_old_backup_cron
         crontab -l > backupgg
-        echo "${time} bash /var/hostvn/menu/cronjob/gg_drive_one >/dev/null 2>&1" >> backupgg
+        echo "${time} bash /var/tinycp/menu/cronjob/gg_drive_one >/dev/null 2>&1" >> backupgg
         crontab backupgg
         rm -rf backupgg
     fi

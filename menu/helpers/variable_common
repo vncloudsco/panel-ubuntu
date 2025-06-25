@@ -26,8 +26,8 @@ UPDATE_LINK="${HOMEPAGE_LINK}/update"
 CURRENT_DATE=$(date +%Y-%m-%d)
 
 # Set directory variables
-BASH_DIR="/var/hostvn"
-USER_DIR="/var/hostvn/users"
+BASH_DIR="/var/tinycp"
+USER_DIR="/var/tinycp/users"
 TEMPLATE_DIR="${BASH_DIR}/menu/template"
 CUSTOM_DIR="BASH_DIR/custom"
 NGINX_CONF_DIR="/etc/nginx"
@@ -41,7 +41,7 @@ BACKUP_VHOST_DIR="${NGINX_CONF_DIR}/backup_vhost"
 FILE_INFO="${BASH_DIR}/.hostvn.conf"
 DEFAULT_DIR_WEB="/usr/share/nginx/html"
 DEFAULT_DIR_TOOL="/usr/share/nginx/private"
-WORDPRESS_CRON_DIR="/var/hostvn/wpcron"
+WORDPRESS_CRON_DIR="/var/tinycp/wpcron"
 RULE_FILE="${BASH_DIR}/validate/rule"
 RCLONE_CONF="/root/.config/rclone/rclone.conf"
 PLUGINS_LIST=("really-simple-ssl" "wps-hide-login" "wps-limit-login" "seo-by-rank-math")

@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _select_action() {
     clear
@@ -108,16 +108,16 @@ _install_imav() {
         if [[ "${OS}" == "ubuntu" && "${OS_VER}" == "18.04" ]]; then
             mkdir -p /etc/sysconfig/imunify360
             mkdir -p /usr/share/nginx/private/imav
-            mkdir -p /var/hostvn/imav
+            mkdir -p /var/tinycp/imav
             cat >"/etc/sysconfig/imunify360/integration.conf" <<END
 [paths]
 ui_path = /usr/share/nginx/private/imav
 ui_path_owner = nginx:nginx
 
 [integration_scripts]
-users = /var/hostvn/imav/get-users-script.sh
-admins = /var/hostvn/imav/to/get-admins-script.sh
-domains = /var/hostvn/imav/get-domains-script.sh
+users = /var/tinycp/imav/get-users-script.sh
+admins = /var/tinycp/imav/to/get-admins-script.sh
+domains = /var/tinycp/imav/get-domains-script.sh
 
 [pam]
 service_name = system-auth
@@ -171,7 +171,7 @@ _uninstall_av() {
             bash imav-deploy.sh --uninstall
             rm -rf imav-deploy.sh
             rm -rf /usr/share/nginx/private/imav
-            rm -rf /var/hostvn/imav
+            rm -rf /var/tinycp/imav
             apt autoremove -y
         else
             clear

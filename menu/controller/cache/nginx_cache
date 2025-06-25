@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _nginx_cache_action() {
     clear
@@ -144,7 +144,7 @@ _enable_cache() {
             cron_exists=$(crontab -l | grep -w 'wpcron')
             if [ -z "${cron_exists}" ]; then
                 crontab -l >wpcron
-                echo "* * * * * bash /var/hostvn/menu/cronjob/wpcron >/dev/null 2>&1" >>wpcron
+                echo "* * * * * bash /var/tinycp/menu/cronjob/wpcron >/dev/null 2>&1" >>wpcron
                 crontab wpcron
                 rm -rf wpcron
             fi

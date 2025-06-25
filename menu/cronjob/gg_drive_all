@@ -10,9 +10,9 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/ipaddress
-source /var/hostvn/.hostvn.conf
-source /var/hostvn/menu/helpers/variable_common
+source /var/tinycp/ipaddress
+source /var/tinycp/.hostvn.conf
+source /var/tinycp/menu/helpers/variable_common
 
 for users in /home/*; do
     if [[ -d "${users}" ]]; then

@@ -177,10 +177,10 @@ set_timezone(){
 #Dowload primary Script #
 #########################
 download_script(){
-    curl -sO "${SCRIPT_LINK}"/hostvn
-    dos2unix hostvn
-    chmod +x hostvn
-    bash hostvn
+    curl -sO "${SCRIPT_LINK}"/tinycp-ubuntu
+    dos2unix tinycp-ubuntu
+    chmod +x tinycp-ubuntu
+    bash tinycp-ubuntu
 }
 
 welcome

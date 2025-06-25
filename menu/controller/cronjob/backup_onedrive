@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _select_type() {
     echo "Lua chon kieu backup ?"
@@ -120,7 +120,7 @@ _create_cron_backup_all() {
     if [ -z "${cron_all_exists}" ]; then
         _delete_old_backup_cron
         crontab -l >backupOneDrive
-        echo "${time} bash /var/hostvn/menu/cronjob/backup_onedrive_all >/dev/null 2>&1" >>backupOneDrive
+        echo "${time} bash /var/tinycp/menu/cronjob/backup_onedrive_all >/dev/null 2>&1" >>backupOneDrive
         crontab backupOneDrive
         rm -rf backupOneDrive
     fi
@@ -131,7 +131,7 @@ _create_cron_backup_one() {
     if [ -z "${cron_one_exists}" ]; then
         _delete_old_backup_cron
         crontab -l >backupOneDrive
-        echo "${time} bash /var/hostvn/menu/cronjob/backup_onedrive_one >/dev/null 2>&1" >> backupOneDrive
+        echo "${time} bash /var/tinycp/menu/cronjob/backup_onedrive_one >/dev/null 2>&1" >> backupOneDrive
         crontab backupOneDrive
         rm -rf backupOneDrive
     fi

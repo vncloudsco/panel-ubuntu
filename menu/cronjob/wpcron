@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-if [[ "$(ls -A /var/hostvn/wpcron)" ]]; then
-   for domains in /var/hostvn/wpcron/* ; do
+if [[ "$(ls -A /var/tinycp/wpcron)" ]]; then
+   for domains in /var/tinycp/wpcron/* ; do
         domain=${domains##*/}
         wget -q -O - http://"${domain}"/wp-cron.php?doing_wp_cron >/dev/null 2>&1
     done

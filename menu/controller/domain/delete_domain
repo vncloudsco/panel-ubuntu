@@ -11,8 +11,8 @@
 ######################################################################
 
 # shellcheck disable=SC2154
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 printf "${GREEN}%s${NC}\n" "=========="
 printf "${GREEN}${NC}%s\n" "Xoa Domain"
@@ -85,11 +85,11 @@ _destroy_other() {
     if [ -d "${NGINX_CONF_DIR}/php/${domain}" ]; then
         rm -rf "${NGINX_CONF_DIR}"/php/"${domain}"
     fi
-    if [ -f "/var/hostvn/wpcron/${domain}" ]; then
-        rm -rf /var/hostvn/wpcron/"${domain}"
+    if [ -f "/var/tinycp/wpcron/${domain}" ]; then
+        rm -rf /var/tinycp/wpcron/"${domain}"
     fi
-    if [ -f "/var/hostvn/ggdrive/${domain}" ]; then
-        rm -rf /var/hostvn/ggdrive/"${domain}"
+    if [ -f "/var/tinycp/ggdrive/${domain}" ]; then
+        rm -rf /var/tinycp/ggdrive/"${domain}"
     fi
     if [ -d "${SSL_DIR}/${domain}" ]; then
         rm -rf "${SSL_DIR}"/"${domain:?}"

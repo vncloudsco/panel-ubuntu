@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 printf "%s=========================%s\n" "${GREEN}" "${NC}"
 printf "%sGo bo SSL - Let's Encrypt%s\n" "${GREEN}" "${NC}"

@@ -11,9 +11,9 @@
 ######################################################################
 
 # shellcheck disable=SC2154
-source /var/hostvn/menu/helpers/variable_php
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/helpers/variable_php
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _confirm(){
     while true
@@ -84,7 +84,7 @@ else
 
     if [[ "${prompt_redis}" =~ ^([yY])$ ]]; then
         _install_redis
-        bash /var/hostvn/menu/controller/cache/script/install_php_redis.sh
+        bash /var/tinycp/menu/controller/cache/script/install_php_redis.sh
         clear
         _install_php_redis_admin
         clear

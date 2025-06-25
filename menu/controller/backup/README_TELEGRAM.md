@@ -66,7 +66,7 @@ Mỗi lần backup thành công, Telegram sẽ nhận được thông báo bao g
 ### Lưu ý
 - Telegram giới hạn file tối đa 2GB
 - Bot cần được thêm vào chat/group trước khi sử dụng
-- Cấu hình được lưu tại: `/var/hostvn/telegram/.telegram_backup_config`
+- Cấu hình được lưu tại: `/var/tinycp/telegram/.telegram_backup_config`
 - File backup tạm sẽ được xóa sau khi gửi thành công
 - Có thể sử dụng cùng lúc với các phương thức backup khác (Google Drive, OneDrive, Local)
 

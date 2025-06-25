@@ -10,10 +10,10 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
-source /var/hostvn/menu/helpers/variable_php
-source /var/hostvn/menu/helpers/mysql_variable
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
+source /var/tinycp/menu/helpers/variable_php
+source /var/tinycp/menu/helpers/mysql_variable
 
 _confirm(){
     clear
