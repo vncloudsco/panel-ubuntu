@@ -33,7 +33,7 @@ jobs:
         with:
           static_site_generator: next
 
-      - name: Install dependencies
+      - name: Install npm
         run: npm install --legacy-peer-deps
         working-directory: docs
       - name: Install dependencies
