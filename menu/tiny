@@ -20,33 +20,55 @@ source /var/tinycp/menu/lang/"${lang}"
 
 CHOICE=1
 
-printf "%s==================================================%s\n" "${GREEN}" "${NC}"
-printf "%s          %s Scripts - VPS Manager Scripts        %s\n" "${GREEN}" "${AUTHOR}" "${NC}"
-printf "%s             %s - Version %s             %s\n" "${GREEN}" "${AUTHOR_WEB}" "${script_version}" "${NC}"
-printf "%s==================================================%s\n" "${GREEN}" "${NC}"
-printf "%sIP VPS: %s%s\n" "${GREEN}" "${IPADDRESS}" "${NC}"
-printf "%sphpMyAdmin: %s%s\n" "${RED}" "http://${IPADDRESS}:${admin_port}/phpmyadmin" "${NC}"
-printf "%s==================================================%s\n" "${GREEN}" "${NC}"
+printf "${GREEN}%s${NC}\n" "=============================================================="
+printf "${GREEN}%s${NC}\n" "                  ${AUTHOR} Scripts - VPS Manager"
+printf "${GREEN}%s${NC}\n" "                ${AUTHOR_WEB} - Version ${script_version}"
+printf "${GREEN}%s${NC}\n" "--------------------------------------------------------------"
+printf "${GREEN}%s${NC}\n" " IP VPS        : ${NC}${IPADDRESS}"
+printf "${RED}%s${NC}\n"   " phpMyAdmin    : http://${IPADDRESS}:${admin_port}/phpmyadmin"
+printf "${GREEN}%s${NC}\n" "=============================================================="
 
 while [ "${CHOICE}" != "0" ]
 do
-    printf "${GREEN}%s${NC}\n" "1. ${lang_manager_domain}"
-    printf "${GREEN}%s${NC}\n" "2. ${lang_manager_ssl}"
-    printf "${GREEN}%s${NC}\n" "3. ${lang_manager_cache}"
-    printf "${GREEN}%s${NC}\n" "4. ${lang_manager_lemp} (Nginx - MariaDB - PHP - SFTP - Log)"
-    printf "${GREEN}%s${NC}\n" "5. ${lang_manager_firewall}"
-    printf "${GREEN}%s${NC}\n" "6. ${lang_permission_manager} Chown/Chmod"
-    printf "${GREEN}%s${NC}\n" "7. ${lang_manager_wordpress}"
-    printf "${GREEN}%s${NC}\n" "8. ${lang_manager_backup_restore}"
-    printf "${GREEN}%s${NC}\n" "9. Admin Tool"
-    printf "${GREEN}%s${NC}\n" "10. ${lang_manager_vps}"
-    printf "${GREEN}%s${NC}\n" "11. ${lang_account_manager}"
-    printf "${GREEN}%s${NC}\n" "12. Cronjob/Auto Backup"
-    printf "${GREEN}%s${NC}\n" "13. ${lang_manager_tool}"
-    printf "${GREEN}%s${NC}\n" "14. ${lang_manager_update_scripts}"
-    printf "${GREEN}%s${NC}\n" "15. Change language"
-    printf "${GREEN}%s${NC}\n" "=================================================="
-    read -r -p " Nhap vao lua chon cua ban [0 = Thoat] " CHOICE
+    printf "\n${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}\n"
+    printf "${GREEN}║               %s                 ║${NC}\n" "MAIN MENU"
+    printf "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}\n"
+    
+    # Website Management
+    printf "\n${GREEN}┌─ WEBSITE MANAGEMENT ${NC}\n"
+    printf "${GREEN}│${NC}\n"
+    printf "${GREEN}│ [1]${NC} ⟹  ${lang_manager_domain}\n"
+    printf "${GREEN}│ [2]${NC} ⟹  ${lang_manager_ssl}\n"
+    printf "${GREEN}│ [3]${NC} ⟹  ${lang_manager_cache}\n"
+    printf "${GREEN}│ [7]${NC} ⟹  ${lang_manager_wordpress}\n"
+    
+    # System Management
+    printf "\n${GREEN}┌─ SYSTEM MANAGEMENT ${NC}\n"
+    printf "${GREEN}│${NC}\n"
+    printf "${GREEN}│ [4]${NC} ⟹  ${lang_manager_lemp} (Nginx - MariaDB - PHP - SFTP - Log)\n"
+    printf "${GREEN}│ [5]${NC} ⟹  ${lang_manager_firewall}\n"
+    printf "${GREEN}│ [6]${NC} ⟹  ${lang_permission_manager} Chown/Chmod\n"
+    printf "${GREEN}│ [10]${NC} ⟹ ${lang_manager_vps}\n"
+    
+    # Backup & Tools
+    printf "\n${GREEN}┌─ BACKUP & TOOLS ${NC}\n"
+    printf "${GREEN}│${NC}\n"
+    printf "${GREEN}│ [8]${NC} ⟹  ${lang_manager_backup_restore}\n"
+    printf "${GREEN}│ [9]${NC} ⟹  Admin Tool\n"
+    printf "${GREEN}│ [11]${NC} ⟹ ${lang_account_manager}\n"
+    printf "${GREEN}│ [12]${NC} ⟹ Cronjob/Auto Backup\n"
+    printf "${GREEN}│ [13]${NC} ⟹ ${lang_manager_tool}\n"
+    
+    # System
+    printf "\n${GREEN}┌─ SYSTEM ${NC}\n"
+    printf "${GREEN}│${NC}\n"
+    printf "${GREEN}│ [14]${NC} ⟹ ${lang_manager_update_scripts}\n"
+    printf "${GREEN}│ [15]${NC} ⟹ Change language\n"
+    printf "${GREEN}│ [0]${NC}  ⟹ Exit\n"
+    
+    printf "\n${GREEN}══════════════════════════════════════════════════════════════${NC}\n"
+    read -r -p " ${GREEN}Enter your choice [0-15]:${NC} " CHOICE
+    
     if [ -z "${CHOICE}" ]
     then
         CHOICE=1

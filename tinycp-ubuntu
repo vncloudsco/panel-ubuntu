@@ -73,7 +73,7 @@ SWAP_TOTAL=$(awk '/SwapFree/ {print $2}' /proc/meminfo)
 PHP_MEM=${RAM_TOTAL}+${SWAP_TOTAL}
 MAX_CLIENT=$((CPU_CORES * 1024))
 
-rm -rf "${DIR}"/hostvn
+rm -rf "${DIR}"/tinycp-ubuntu
 
 ############################################
 # Function
