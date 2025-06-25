@@ -5,7 +5,7 @@
 [![Cài đặt & Tối ưu LEMP Stack](https://img.shields.io/badge/LEMP-Installer-blue?style=for-the-badge)](https://tinyactive.github.io/panel)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-18.04%20|%2024.04-orange?style=for-the-badge&logo=ubuntu)](https://ubuntu.com)
 
-<img src="https://blog.hostvn.net/wp-content/uploads/2020/07/logo-big-2.png" width="300px" />
+<img src="https://tinyactive.com/wp-content/uploads/2024/02/Asset-5.svg" width="300px" />
 
 **Cài đặt LEMP stack nhanh, an toàn và tối ưu cho VPS của bạn**
 
@@ -17,9 +17,10 @@
 
 ---
 
-> TinyPanel giúp cài đặt và cấu hình Nginx, MariaDB, PHP với các thiết lập tối ưu về hiệu năng và bảo mật. Viết bằng Bash shell script cho Ubuntu (18.04, 20.04) và Debian 10.
-
-**⚠️ LƯU Ý: Nghiêm cấm phân phối lại hoặc đóng gói lại dự án này cho mục đích thương mại.**
+> TinyPanel giúp cài đặt và cấu hình Nginx, MariaDB, PHP với các thiết lập tối ưu về hiệu năng và bảo mật. Viết bằng Bash shell script cho Ubuntu (18.04 tới 24.04)
+<div align="center">
+⚠️ LƯU Ý: Nghiêm cấm phân phối lại hoặc đóng gói lại dự án này cho mục đích thương mại.
+</div>
 
 ## 📋 Tính năng nổi bật
 
