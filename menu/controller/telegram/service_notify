@@ -15,9 +15,9 @@ _create_service_notify_file(){
     cat >> "/var/tinycp/telegram/servicesNotify.sh" << END
 #!/bin/bash
 
-PHP1_VERSION=\$(grep -w "php1_version" "/var/tinycp/.hostvn.conf" | cut -f2 -d'=')
-PHP2_VERSION=\$(grep -w "php2_version" "/var/tinycp/.hostvn.conf" | cut -f2 -d'=')
-PHP2_RELEASE=\$(grep -w "php2_release" "/var/tinycp/.hostvn.conf" | cut -f2 -d'=')
+PHP1_VERSION=\$(grep -w "php1_version" "/var/tinycp/.tinycp.conf" | cut -f2 -d'=')
+PHP2_VERSION=\$(grep -w "php2_version" "/var/tinycp/.tinycp.conf" | cut -f2 -d'=')
+PHP2_RELEASE=\$(grep -w "php2_release" "/var/tinycp/.tinycp.conf" | cut -f2 -d'=')
 CHAT_ID="$TELEGRAM_ID"
 TOKEN="$TELEGRAM_TOKEN"
 TIMEOUT="10"

@@ -16,9 +16,9 @@ DIR="/opt/php-extension"
 MODULE_LINK="${HOMEPAGE_LINK}/modules"
 IG_BINARY_VERSION=$(curl -s "${UPDATE_LINK}"/version | grep "igbinary_version=" | cut -f2 -d'=')
 PHP_REDIS_VERSION=$(curl -s "${UPDATE_LINK}"/version | grep "php_redis_version=" | cut -f2 -d'=')
-PHP1_VERSION=$(grep -w "php1_version" "/var/tinycp/.hostvn.conf" | cut -f2 -d'=')
-PHP2_RELEASE=$(grep -w "php2_release" "/var/tinycp/.hostvn.conf" | cut -f2 -d'=')
-PHP2_VERSION=$(grep -w "php2_version" "/var/tinycp/.hostvn.conf" | cut -f2 -d'=')
+PHP1_VERSION=$(grep -w "php1_version" "/var/tinycp/.tinycp.conf" | cut -f2 -d'=')
+PHP2_RELEASE=$(grep -w "php2_release" "/var/tinycp/.tinycp.conf" | cut -f2 -d'=')
+PHP2_VERSION=$(grep -w "php2_version" "/var/tinycp/.tinycp.conf" | cut -f2 -d'=')
 PHP1_INI_PATH="/etc/php/${PHP1_VERSION}/fpm/conf.d"
 PHP2_INI_PATH="/etc/php/${PHP2_VERSION}/fpm/conf.d"
 PHP1_CLI_PATH="/etc/php/${PHP1_VERSION}/cli/conf.d"

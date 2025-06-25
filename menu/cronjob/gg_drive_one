@@ -11,7 +11,7 @@
 ######################################################################
 
 source /var/tinycp/ipaddress
-source /var/tinycp/.hostvn.conf
+source /var/tinycp/.tinycp.conf
 source /var/tinycp/menu/helpers/variable_common
 
 for domains in "${BASH_DIR}"/ggdrive/*; do

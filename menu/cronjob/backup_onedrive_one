@@ -11,7 +11,7 @@
 ######################################################################
 
 source /var/tinycp/ipaddress
-source /var/tinycp/.hostvn.conf
+source /var/tinycp/.tinycp.conf
 source /var/tinycp/menu/helpers/variable_common
 onedrive_folder_name=$(grep -w "onedrive_folder_name" "${FILE_INFO}" | cut -f2 -d'=')
 

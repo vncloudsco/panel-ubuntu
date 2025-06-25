@@ -79,7 +79,7 @@ _create_cron_backup_one() {
 #                                                                    #
 ######################################################################
 
-source /var/tinycp/.hostvn.conf
+source /var/tinycp/.tinycp.conf
 source /var/tinycp/menu/helpers/variable_common
 source /var/tinycp/menu/controller/backup/backup_telegram
 
@@ -133,7 +133,7 @@ _create_cron_backup_all() {
 #                                                                    #
 ######################################################################
 
-source /var/tinycp/.hostvn.conf
+source /var/tinycp/.tinycp.conf
 source /var/tinycp/menu/helpers/variable_common
 source /var/tinycp/menu/controller/backup/backup_telegram
 

@@ -30,7 +30,7 @@ BASH_DIR="/var/tinycp"
 GITHUB_RAW_LINK="https://raw.githubusercontent.com"
 EXT_LINK="https://scripts.hostvn.net"
 UPDATE_LINK="https://scripts.hostvn.net/update"
-FILE_INFO="${BASH_DIR}/.hostvn.conf"
+FILE_INFO="${BASH_DIR}/.tinycp.conf"
 HOSTNAME=$(hostname)
 PHP2_RELEASE="no"
 
@@ -2343,7 +2343,7 @@ install_wp_cli_packages() {
 ############################################
 add_menu() {
     cd_dir "${BASH_DIR}"
-    rm -rf menu hostvn.conf ipaddress menu.tar.gz /usr/bin/hostvn
+    rm -rf menu tinycp.conf ipaddress menu.tar.gz /usr/bin/hostvn
     wget "${EXT_LINK}"/ubuntu/menu.tar.gz  > /dev/null
     tar -xvf menu.tar.gz && rm -rf menu.tar.gz  > /dev/null
     mkdir -p "${BASH_DIR}"/users

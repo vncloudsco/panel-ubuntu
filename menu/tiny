@@ -11,7 +11,7 @@
 ######################################################################
 
 # shellcheck disable=SC2154
-source /var/tinycp/.hostvn.conf
+source /var/tinycp/.tinycp.conf
 source /var/tinycp/menu/route/parent
 source /var/tinycp/menu/helpers/variable_common
 source /var/tinycp/ipaddress
