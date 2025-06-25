@@ -24,15 +24,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        working-directory: ./docs
 
       - name: Setup Node
         uses: actions/setup-node@v4
+        working-directory: ./docs
         with:
           node-version: "20"
           cache: 'npm'
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        working-directory: ./docs
         with:
           static_site_generator: next
 
