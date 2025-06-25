@@ -33,7 +33,7 @@
         <li>✅ Menu dễ sử dụng, cập nhật thường xuyên</li>
         <li>✅ MariaDB 10.5 cấu hình tối ưu</li>
         <li>✅ Nginx phiên bản mới nhất</li>
-        <li>✅ Hỗ trợ nhiều phiên bản PHP (5.6, 7.0-7.4), 8.0-8.4</li>
+        <li>✅ Hỗ trợ nhiều phiên bản PHP (5.6, 7.0-7.4 8.0-8.4)</li>
         <li>✅ Cấu hình FastCGI cache cho Nginx</li>
         <li>✅ Redis & Memcached cho cache</li>
         <li>✅ Tích hợp SSL Let's Encrypt</li>
