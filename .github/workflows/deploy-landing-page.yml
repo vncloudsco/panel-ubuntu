@@ -23,10 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:    
       - name: Checkout repository
-        uses: actions/checkout@v4- name: Setup Node
+        uses: actions/checkout@v4
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"      - name: Setup Pages
+          node-version: "20"      
+      - name: Setup Pages
         uses: actions/configure-pages@v4
         with:
           static_site_generator: next
@@ -34,9 +36,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
         working-directory: ./docs
-        - name: Build with Next.js (including static export)
+      - name: Build with Next.js (including static export)
         run: npm run build
-        working-directory: ./docs      - name: Upload artifact
+        working-directory: ./docs     
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs/.next/out
