@@ -86,13 +86,32 @@ _select_php_ver(){
 }
 
 _remove_old_php(){
+    # Common packages for all PHP versions
     apt -y purge php"${PHP1_VERSION_OLD}" php"${PHP1_VERSION_OLD}"-fpm php"${PHP1_VERSION_OLD}"-ldap php"${PHP1_VERSION_OLD}"-zip \
         php"${PHP1_VERSION_OLD}"-cli php"${PHP1_VERSION_OLD}"-mysql php"${PHP1_VERSION_OLD}"-gd php"${PHP1_VERSION_OLD}"-xml \
-        php"${PHP1_VERSION_OLD}"-mbstring php"${PHP1_VERSION_OLD}"-common php"${PHP1_VERSION_OLD}"-soap php"${PHP1_VERSION_OLD}"-json \
+        php"${PHP1_VERSION_OLD}"-mbstring php"${PHP1_VERSION_OLD}"-common php"${PHP1_VERSION_OLD}"-soap \
         php"${PHP1_VERSION_OLD}"-curl php"${PHP1_VERSION_OLD}"-bcmath php"${PHP1_VERSION_OLD}"-snmp php"${PHP1_VERSION_OLD}"-pspell \
         php"${PHP1_VERSION_OLD}"-gmp php"${PHP1_VERSION_OLD}"-intl php"${PHP1_VERSION_OLD}"-imap php"${PHP1_VERSION_OLD}"-enchant \
-        php"${PHP1_VERSION_OLD}"-xmlrpc php"${PHP1_VERSION_OLD}"-tidy php"${PHP1_VERSION_OLD}"-opcache php"${PHP1_VERSION_OLD}"-cli \
-        php"${PHP1_VERSION_OLD}"-dev php"${PHP1_VERSION_OLD}"-sqlite3 php"${PHP1_VERSION_OLD}"-imagick
+        php"${PHP1_VERSION_OLD}"-tidy php"${PHP1_VERSION_OLD}"-opcache php"${PHP1_VERSION_OLD}"-cli \
+        php"${PHP1_VERSION_OLD}"-dev php"${PHP1_VERSION_OLD}"-sqlite3
+    
+    # Version specific package handling
+    PHP_OLD_MAJOR_VERSION=$(echo "${PHP1_VERSION_OLD}" | cut -c1)
+    PHP_OLD_MINOR_VERSION=$(echo "${PHP1_VERSION_OLD}" | cut -c2-)
+    
+    # Remove PHP extensions based on version compatibility
+    if [ "${PHP_OLD_MAJOR_VERSION}" -lt "8" ]; then
+        # For PHP 7.x and below
+        apt -y purge php"${PHP1_VERSION_OLD}"-json php"${PHP1_VERSION_OLD}"-xmlrpc
+    elif [ "${PHP_OLD_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_OLD_MINOR_VERSION}" -lt "1" ]; then
+        # For PHP 8.0 only
+        apt -y purge php"${PHP1_VERSION_OLD}"-xmlrpc
+    fi
+    
+    # Purge imagick if it was installed for this PHP version
+    if [ "${PHP_OLD_MAJOR_VERSION}" -lt "8" ] || ([ "${PHP_OLD_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_OLD_MINOR_VERSION}" -lt "3" ]); then
+        apt -y purge php"${PHP1_VERSION_OLD}"-imagick || true
+    fi
     apt autoremove -y
 
     rm -rf /etc/php/"${PHP1_VERSION_OLD}"
@@ -110,18 +129,34 @@ _install_php(){
     systemctl stop php"${PHP1_VERSION_OLD}"-fpm
     systemctl disable php"${PHP1_VERSION_OLD}"-fpm
 
+    # Common packages for all PHP versions
     apt -y install php"${PHP1_VERSION_NEW}" php"${PHP1_VERSION_NEW}"-fpm php"${PHP1_VERSION_NEW}"-ldap php"${PHP1_VERSION_NEW}"-zip \
         php"${PHP1_VERSION_NEW}"-cli php"${PHP1_VERSION_NEW}"-mysql php"${PHP1_VERSION_NEW}"-gd php"${PHP1_VERSION_NEW}"-xml \
         php"${PHP1_VERSION_NEW}"-mbstring php"${PHP1_VERSION_NEW}"-common php"${PHP1_VERSION_NEW}"-soap \
         php"${PHP1_VERSION_NEW}"-curl php"${PHP1_VERSION_NEW}"-bcmath php"${PHP1_VERSION_NEW}"-snmp php"${PHP1_VERSION_NEW}"-pspell \
         php"${PHP1_VERSION_NEW}"-gmp php"${PHP1_VERSION_NEW}"-intl php"${PHP1_VERSION_NEW}"-imap php"${PHP1_VERSION_NEW}"-enchant \
-        php"${PHP1_VERSION_NEW}"-xmlrpc php"${PHP1_VERSION_NEW}"-tidy php"${PHP1_VERSION_NEW}"-opcache php"${PHP1_VERSION_NEW}"-cli \
-        php"${PHP1_VERSION_NEW}"-dev php"${PHP1_VERSION_NEW}"-imagick php"${PHP1_VERSION_NEW}"-sqlite3
-
-    if [ "${PHP1_VERSION_NEW}" != "8.0" ]; then
-        apt -y install php"${PHP1_VERSION_NEW}"-json
+        php"${PHP1_VERSION_NEW}"-tidy php"${PHP1_VERSION_NEW}"-opcache php"${PHP1_VERSION_NEW}"-cli \
+        php"${PHP1_VERSION_NEW}"-dev php"${PHP1_VERSION_NEW}"-sqlite3
+    
+    # Version specific package handling
+    PHP_MAJOR_VERSION=$(echo "${PHP1_VERSION_NEW}" | cut -c1)
+    PHP_MINOR_VERSION=$(echo "${PHP1_VERSION_NEW}" | cut -c2-)
+    
+    # Install PHP extensions based on version compatibility
+    if [ "${PHP_MAJOR_VERSION}" -lt "8" ]; then
+        # For PHP 7.x and below
+        apt -y install php"${PHP1_VERSION_NEW}"-json php"${PHP1_VERSION_NEW}"-xmlrpc
+    elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -lt "1" ]; then
+        # For PHP 8.0 only
+        apt -y install php"${PHP1_VERSION_NEW}"-xmlrpc
+    fi
+    
+    # Install imagick if compatible with PHP version
+    if [ "${PHP_MAJOR_VERSION}" -lt "8" ] || ([ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -lt "3" ]); then
+        apt -y install php"${PHP1_VERSION_NEW}"-imagick || true
     fi
 
+    # Install mcrypt for PHP 5.6 if needed
     if [ "${PHP1_VERSION_NEW}" == "5.6" ]; then
         apt -y install php5.6-mcrypt
     fi
@@ -160,8 +195,15 @@ _install_ig_binary(){
     check_ig_binary_php1_old=$(php"${PHP1_VERSION_OLD}" -m | grep igbinary)
 
     if [ -n "${check_ig_binary_php1_old}" ]; then
+        # Set appropriate igbinary version based on PHP version
+        PHP_MAJOR_VERSION=$(echo "${PHP1_VERSION_NEW}" | cut -c1)
+        PHP_MINOR_VERSION=$(echo "${PHP1_VERSION_NEW}" | cut -c2-)
+        
         if [[ "${PHP1_VERSION_NEW}" == "5.6" ]]; then
             IG_BINARY_VERSION="2.0.8"
+        elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -ge "2" ]; then
+            # For PHP 8.2+ ensure we use a compatible version
+            IG_BINARY_VERSION="3.2.7"
         fi
 
         EX_DIR="/opt/php-extension"
@@ -194,8 +236,15 @@ _install_php_memcached(){
     check_ig_binary_php1_new=$(php"${PHP1_VERSION_NEW}" -m | grep igbinary)
 
     if [  -n "${check_ig_binary_php1_new}" ] && service_running 'memcached' ; then
+        # Set appropriate memcached version based on PHP version
+        PHP_MAJOR_VERSION=$(echo "${PHP1_VERSION_NEW}" | cut -c1)
+        PHP_MINOR_VERSION=$(echo "${PHP1_VERSION_NEW}" | cut -c2-)
+        
         if [[ "${PHP1_VERSION_NEW}" == "5.6" ]]; then
             PHP_MEMCACHED_VERSION="2.2.0"
+        elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -ge "2" ]; then
+            # For PHP 8.2+ use latest compatible version
+            PHP_MEMCACHED_VERSION="3.2.0"
         fi
 
         EX_DIR="/opt/php-extension"
@@ -210,7 +259,14 @@ _install_php_memcached(){
         wget "${MODULE_LINK}"/memcached-"${PHP_MEMCACHED_VERSION}".tgz
         tar -xvf memcached-"${PHP_MEMCACHED_VERSION}".tgz
         _cd_dir "memcached-${PHP_MEMCACHED_VERSION}"
-        /usr/bin/phpize"${PHP1_VERSION_NEW}" && ./configure --enable-memcached-igbinary --with-php-config=/usr/bin/php-config"${PHP1_VERSION_NEW}"
+        
+        # Configure options change based on PHP version
+        if [ "${PHP_MAJOR_VERSION}" -lt "8" ]; then
+            /usr/bin/phpize"${PHP1_VERSION_NEW}" && ./configure --enable-memcached-igbinary --with-php-config=/usr/bin/php-config"${PHP1_VERSION_NEW}"
+        else
+            /usr/bin/phpize"${PHP1_VERSION_NEW}" && ./configure --enable-memcached --enable-memcached-igbinary --with-php-config=/usr/bin/php-config"${PHP1_VERSION_NEW}"
+        fi
+        
         make && make install
         cd "${EX_DIR}" && rm -rf memcached-"${PHP_MEMCACHED_VERSION}".tgz memcached-"${PHP_MEMCACHED_VERSION}"
 
@@ -227,8 +283,15 @@ _install_php_redis(){
     check_ig_binary_php1_new=$(php"${PHP1_VERSION_NEW}" -m | grep igbinary)
 
     if [  -n "${check_ig_binary_php1_new}" ] && service_running 'redis' ; then
+        # Set appropriate redis version based on PHP version
+        PHP_MAJOR_VERSION=$(echo "${PHP1_VERSION_NEW}" | cut -c1)
+        PHP_MINOR_VERSION=$(echo "${PHP1_VERSION_NEW}" | cut -c2-)
+        
         if [[ "${PHP1_VERSION_NEW}" == "5.6" ]]; then
             PHP_REDIS_VERSION="4.3.0"
+        elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -ge "2" ]; then
+            # For PHP 8.2+ ensure we use a compatible version
+            PHP_REDIS_VERSION="5.3.7"
         fi
 
         EX_DIR="/opt/php-extension"
@@ -237,13 +300,20 @@ _install_php_redis(){
         if [ -f "redis-${PHP_REDIS_VERSION}.tgz" ]; then
             rm -rf redis-"${PHP_REDIS_VERSION}".tgz
         fi
-        if [ -d "memcached-${PHP_REDIS_VERSION}" ]; then
+        if [ -d "redis-${PHP_REDIS_VERSION}" ]; then
             rm -rf redis-"${PHP_REDIS_VERSION}"
         fi
         wget "${MODULE_LINK}"/redis-"${PHP_REDIS_VERSION}".tgz
         tar -xvf redis-"${PHP_REDIS_VERSION}".tgz
         _cd_dir "${EX_DIR}/redis-${PHP_REDIS_VERSION}"
-        /usr/bin/phpize"${PHP1_VERSION_NEW}" && ./configure --enable-redis-igbinary --with-php-config=/usr/bin/php-config"${PHP1_VERSION_NEW}"
+        
+        # Configure options may change based on PHP version
+        if [ "${PHP_MAJOR_VERSION}" -lt "8" ]; then
+            /usr/bin/phpize"${PHP1_VERSION_NEW}" && ./configure --enable-redis-igbinary --with-php-config=/usr/bin/php-config"${PHP1_VERSION_NEW}"
+        else
+            /usr/bin/phpize"${PHP1_VERSION_NEW}" && ./configure --enable-redis --enable-redis-igbinary --with-php-config=/usr/bin/php-config"${PHP1_VERSION_NEW}"
+        fi
+        
         make && make install
         cd "${EX_DIR}" && rm -rf redis-"${PHP_REDIS_VERSION}".tgz redis-"${PHP_REDIS_VERSION}"
 
