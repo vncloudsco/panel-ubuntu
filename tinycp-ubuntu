@@ -25,17 +25,17 @@ NC='\033[0m'
 SCRIPTS_VERSION="0.1.0"
 IPADDRESS=$(curl -s https://ifconfig.me/ip)
 DIR=$(pwd)
-BASH_DIR="/var/hostvn"
+BASH_DIR="/var/tinycp"
 GITHUB_RAW_LINK="https://raw.githubusercontent.com"
-EXT_LINK="https://tinyactive.github.io/panel"
-UPDATE_LINK="https://tinyactive.github.io/panel/update"
-FILE_INFO="${BASH_DIR}/.hostvn.conf"
+EXT_LINK="${HOME_PAGE}"
+UPDATE_LINK="${HOME_PAGE}/update"
+FILE_INFO="${BASH_DIR}/.tinycp.conf"
 HOSTNAME=$(hostname)
 PHP2_RELEASE="no"
 
 # Copyright
-AUTHOR="HOSTVN.VN"
-AUTHOR_CONTACT="https://www.facebook.com/groups/hostvn.vn"
+AUTHOR="TinyActive.com"
+AUTHOR_CONTACT="https://github.com/TinyActive"
 
 # Service Version
 PHPMYADMIN_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "phpmyadmin_version=" | cut -f2 -d'=')
@@ -73,7 +73,7 @@ SWAP_TOTAL=$(awk '/SwapFree/ {print $2}' /proc/meminfo)
 PHP_MEM=${RAM_TOTAL}+${SWAP_TOTAL}
 MAX_CLIENT=$((CPU_CORES * 1024))
 
-rm -rf "${DIR}"/hostvn
+rm -rf "${DIR}"/tinycp-ubuntu
 
 ############################################
 # Function
@@ -413,8 +413,8 @@ check_duplicate_php() {
 install_nginx(){
     apt-get install build-essential zlib1g-dev libpcre3 libpcre3-dev unzip uuid-dev -y
     apt autoremove -y
-    UPDATE_LINK="https://tinyactive.github.io/panel/update"
-    MODULES_LINK="https://tinyactive.github.io/panel/modules"
+    UPDATE_LINK="${HOME_PAGE}/update"
+    MODULES_LINK="${HOME_PAGE}/modules"
     MODULE_PATH="/usr/share/nginx_module"
     mkdir -p "${MODULE_PATH}"
     NGINX_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nginx_version=" | cut -f2 -d'=')
@@ -569,22 +569,38 @@ install_mariadb() {
 }
 
 install_php() {
+    # Add Ondrej's repository for PHP versions
     add-apt-repository ppa:ondrej/php <<EOF
 
 EOF
 
     apt-get update -y
 
+    # Common packages for all PHP versions
     apt-get -y install php"${PHP_VERSION}" php"${PHP_VERSION}"-fpm php"${PHP_VERSION}"-ldap php"${PHP_VERSION}"-zip \
         php"${PHP_VERSION}"-cli php"${PHP_VERSION}"-mysql php"${PHP_VERSION}"-gd php"${PHP_VERSION}"-xml \
         php"${PHP_VERSION}"-mbstring php"${PHP_VERSION}"-common php"${PHP_VERSION}"-soap \
         php"${PHP_VERSION}"-curl php"${PHP_VERSION}"-bcmath php"${PHP_VERSION}"-snmp php"${PHP_VERSION}"-pspell \
         php"${PHP_VERSION}"-gmp php"${PHP_VERSION}"-intl php"${PHP_VERSION}"-imap php"${PHP_VERSION}"-enchant \
-        php"${PHP_VERSION}"-xmlrpc php"${PHP_VERSION}"-tidy php"${PHP_VERSION}"-opcache php"${PHP_VERSION}"-cli \
-        php"${PHP_VERSION}"-dev php"${PHP_VERSION}"-imagick php"${PHP_VERSION}"-sqlite3
-
-    if [ "${PHP_VERSION}" != "8.0" ]; then
-        apt -y install php"${PHP_VERSION}"-json
+        php"${PHP_VERSION}"-tidy php"${PHP_VERSION}"-opcache php"${PHP_VERSION}"-cli \
+        php"${PHP_VERSION}"-dev php"${PHP_VERSION}"-sqlite3
+    
+    # Version specific package handling
+    PHP_MAJOR_VERSION=$(echo "${PHP_VERSION}" | cut -c1)
+    PHP_MINOR_VERSION=$(echo "${PHP_VERSION}" | cut -c2-)
+    
+    # Install PHP extensions based on version compatibility
+    if [ "${PHP_MAJOR_VERSION}" -lt "8" ]; then
+        # For PHP 7.x and below
+        apt -y install php"${PHP_VERSION}"-json php"${PHP_VERSION}"-xmlrpc
+    elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -lt "1" ]; then
+        # For PHP 8.0 only
+        apt -y install php"${PHP_VERSION}"-xmlrpc
+    fi
+    
+    # Install imagick if compatible with PHP version
+    if [ "${PHP_MAJOR_VERSION}" -lt "8" ] || ([ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -lt "3" ]); then
+        apt -y install php"${PHP_VERSION}"-imagick || true
     fi
 
     if [ "${PHP_VERSION}" == "5.6" ]; then
@@ -1804,7 +1820,7 @@ EOcf_ipv6
     cron_cf_exists=$(crontab -l | grep -w 'updateCloudflareRangeIP')
     if [ -z "${cron_cf_exists}" ]; then
         crontab -l > updateCf
-        echo "0 3 * * * bash /var/hostvn/menu/cronjob/updateCloudflareRangeIP >/dev/null 2>&1" >> updateCf
+        echo "0 3 * * * bash /var/tinycp/menu/cronjob/updateCloudflareRangeIP >/dev/null 2>&1" >> updateCf
         crontab updateCf
         rm -rf updateCf
     fi
@@ -3382,19 +3398,19 @@ END
 ############################################
 add_menu() {
     cd_dir "${BASH_DIR}"
-    rm -rf menu hostvn.conf ipaddress menu.tar.gz /usr/bin/hostvn
-    wget "${EXT_LINK}"/menu.tar.gz  > /dev/null
-    tar -xvf menu.tar.gz && rm -rf menu.tar.gz  > /dev/null
+    rm -rf menu tinycp.conf ipaddress menu-ubuntu.tar.gz /usr/bin/hostvn
+    wget "${EXT_LINK}"/menu-ubuntu.tar.gz  > /dev/null
+    tar -xvf menu-ubuntu.tar.gz && rm -rf menu-ubuntu.tar.gz  > /dev/null
     mkdir -p "${BASH_DIR}"/users
     mkdir -p /var/log/hostvn
-    mkdir -p /var/hostvn/wpcron
+    mkdir -p /var/tinycp/wpcron
     chmod 711 menu users wpcron
     chmod +x ./menu/* ./menu/*/* ./menu/*/*/* ./menu/*/*/*/* > /dev/null
     dos2unix ./menu/* > /dev/null
     dos2unix ./menu/*/* > /dev/null
     dos2unix ./menu/*/*/* > /dev/null
 
-    mv "${BASH_DIR}"/menu/hostvn /usr/bin/hostvn && chmod +x /usr/bin/hostvn
+    mv "${BASH_DIR}"/menu/tiny /usr/bin/tiny && chmod +x /usr/bin/tiny
 }
 
 ############################################
@@ -3420,8 +3436,8 @@ write_info() {
     touch /etc/hostvn.lock
     chmod 600 "${FILE_INFO}" /etc/hostvn.lock
 
-    if [[ ! -f "/var/hostvn/ipaddress" ]]; then
-        cat >>"/var/hostvn/ipaddress" <<END
+    if [[ ! -f "/var/tinycp/ipaddress" ]]; then
+        cat >>"/var/tinycp/ipaddress" <<END
 #!/bin/bash
 IPADDRESS=${IPADDRESS}
 END

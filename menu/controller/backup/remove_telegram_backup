@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _confirm_remove() {
     clear
@@ -45,8 +45,8 @@ _remove_telegram_backup() {
     printf "%s\n" "${YELLOW}Dang xoa tinh nang Telegram Backup...${NC}"
     
     # Remove config files
-    if [ -f "/var/hostvn/telegram/.telegram_backup_config" ]; then
-        rm -f "/var/hostvn/telegram/.telegram_backup_config"
+    if [ -f "/var/tinycp/telegram/.telegram_backup_config" ]; then
+        rm -f "/var/tinycp/telegram/.telegram_backup_config"
         printf "%s\n" "${GREEN}Da xoa file cau hinh.${NC}"
     fi
     
@@ -55,36 +55,36 @@ _remove_telegram_backup() {
     printf "%s\n" "${GREEN}Da xoa cac cronjob Telegram.${NC}"
     
     # Remove cronjob scripts
-    if [ -f "/var/hostvn/menu/cronjob/backup_telegram_one" ]; then
-        rm -f "/var/hostvn/menu/cronjob/backup_telegram_one"
+    if [ -f "/var/tinycp/menu/cronjob/backup_telegram_one" ]; then
+        rm -f "/var/tinycp/menu/cronjob/backup_telegram_one"
         printf "%s\n" "${GREEN}Da xoa script backup_telegram_one.${NC}"
     fi
     
-    if [ -f "/var/hostvn/menu/cronjob/backup_telegram_all" ]; then
-        rm -f "/var/hostvn/menu/cronjob/backup_telegram_all"
+    if [ -f "/var/tinycp/menu/cronjob/backup_telegram_all" ]; then
+        rm -f "/var/tinycp/menu/cronjob/backup_telegram_all"
         printf "%s\n" "${GREEN}Da xoa script backup_telegram_all.${NC}"
     fi
     
     # Remove controller files (optional - comment out if you want to keep them)
-    # if [ -f "/var/hostvn/menu/controller/backup/backup_telegram" ]; then
-    #     rm -f "/var/hostvn/menu/controller/backup/backup_telegram"
+    # if [ -f "/var/tinycp/menu/controller/backup/backup_telegram" ]; then
+    #     rm -f "/var/tinycp/menu/controller/backup/backup_telegram"
     #     printf "%s\n" "${GREEN}Da xoa controller backup_telegram.${NC}"
     # fi
     
-    # if [ -f "/var/hostvn/menu/controller/backup/connect_telegram" ]; then
-    #     rm -f "/var/hostvn/menu/controller/backup/connect_telegram"
+    # if [ -f "/var/tinycp/menu/controller/backup/connect_telegram" ]; then
+    #     rm -f "/var/tinycp/menu/controller/backup/connect_telegram"
     #     printf "%s\n" "${GREEN}Da xoa controller connect_telegram.${NC}"
     # fi
     
-    # if [ -f "/var/hostvn/menu/controller/cronjob/backup_telegram" ]; then
-    #     rm -f "/var/hostvn/menu/controller/cronjob/backup_telegram"
+    # if [ -f "/var/tinycp/menu/controller/cronjob/backup_telegram" ]; then
+    #     rm -f "/var/tinycp/menu/controller/cronjob/backup_telegram"
     #     printf "%s\n" "${GREEN}Da xoa controller cronjob backup_telegram.${NC}"
     # fi
     
     # Remove empty telegram directory if no other files
-    if [ -d "/var/hostvn/telegram" ]; then
-        if [ -z "$(ls -A /var/hostvn/telegram 2>/dev/null)" ]; then
-            rmdir /var/hostvn/telegram
+    if [ -d "/var/tinycp/telegram" ]; then
+        if [ -z "$(ls -A /var/tinycp/telegram 2>/dev/null)" ]; then
+            rmdir /var/tinycp/telegram
             printf "%s\n" "${GREEN}Da xoa thu muc telegram rong.${NC}"
         fi
     fi

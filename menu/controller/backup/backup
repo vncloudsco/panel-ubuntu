@@ -10,8 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _select_backup_location() {
     clear
@@ -288,7 +288,7 @@ else
                         _run
                     fi
                 elif [ "${location}" == "telegram" ]; then
-                    source /var/hostvn/menu/controller/backup/backup_telegram
+                    source /var/tinycp/menu/controller/backup/backup_telegram
                     if _run_telegram_backup "${domain}" "${type}"; then
                         notify="${GREEN}Backup va gui len Telegram thanh cong.${NC}"
                     else

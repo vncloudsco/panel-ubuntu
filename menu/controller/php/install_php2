@@ -3,16 +3,16 @@
 ######################################################################
 #           Auto Install & Optimize LEMP Stack on Ubuntu             #
 #                                                                    #
-#                Author: Sanvv - HOSTVN Technical                    #
-#                  Website: https://hostvn.vn                        #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
 #                                                                    #
 #              Please do not remove copyright. Thank!                #
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
-source /var/hostvn/menu/helpers/variable_php
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
+source /var/tinycp/menu/helpers/variable_php
 
 _set_var(){
     MODULE_LINK="${HOMEPAGE_LINK}/modules"
@@ -77,17 +77,33 @@ _check_duplicate_php(){
 }
 
 _install_php(){
+    # Common packages for all PHP versions
     apt -y install php"${PHP2_VERSION}" php"${PHP2_VERSION}"-fpm php"${PHP2_VERSION}"-ldap php"${PHP2_VERSION}"-zip \
         php"${PHP2_VERSION}"-cli php"${PHP2_VERSION}"-mysql php"${PHP2_VERSION}"-gd php"${PHP2_VERSION}"-xml \
         php"${PHP2_VERSION}"-mbstring php"${PHP2_VERSION}"-common php"${PHP2_VERSION}"-soap \
         php"${PHP2_VERSION}"-curl php"${PHP2_VERSION}"-bcmath php"${PHP2_VERSION}"-snmp php"${PHP2_VERSION}"-pspell \
         php"${PHP2_VERSION}"-gmp php"${PHP2_VERSION}"-intl php"${PHP2_VERSION}"-imap php"${PHP2_VERSION}"-enchant \
-        php"${PHP2_VERSION}"-xmlrpc php"${PHP2_VERSION}"-tidy php"${PHP2_VERSION}"-opcache php"${PHP2_VERSION}"-cli \
-        php"${PHP2_VERSION}"-dev php"${PHP2_VERSION}"-imagick php"${PHP2_VERSION}"-sqlite3
-
-        if [ "${PHP2_VERSION}" != "8.0" ]; then
-            apt -y install php"${PHP2_VERSION}"-json
-        fi
+        php"${PHP2_VERSION}"-tidy php"${PHP2_VERSION}"-opcache php"${PHP2_VERSION}"-cli \
+        php"${PHP2_VERSION}"-dev php"${PHP2_VERSION}"-sqlite3
+    
+    # Version specific package handling
+    PHP_MAJOR_VERSION=$(echo "${PHP2_VERSION}" | cut -c1)
+    PHP_MINOR_VERSION=$(echo "${PHP2_VERSION}" | cut -c2-)
+    
+    # Install PHP extensions based on version compatibility
+    if [ "${PHP_MAJOR_VERSION}" -lt "8" ]; then
+        # For PHP 7.x and below
+        apt -y install php"${PHP2_VERSION}"-json php"${PHP2_VERSION}"-xmlrpc
+    elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -lt "1" ]; then
+        # For PHP 8.0 only
+        apt -y install php"${PHP2_VERSION}"-xmlrpc
+    fi
+    
+    # Install imagick if compatible with PHP version
+    # (As of now, imagick works with PHP 8.0-8.2, may need adjustment for 8.3-8.4)
+    if [ "${PHP_MAJOR_VERSION}" -lt "8" ] || ([ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -lt "3" ]); then
+        apt -y install php"${PHP2_VERSION}"-imagick || true
+    fi
 
         php2_service_file_1="/usr/lib/systemd/system/php${PHP2_VERSION}-fpm.service"
         if [ -f "${php2_service_file_1}" ]; then
@@ -120,8 +136,15 @@ _install_ig_binary(){
     check_ig_binary_php1=$(php"${PHP1_VERSION}" -m | grep igbinary)
 
     if [ -n "${check_ig_binary_php1}" ]; then
+        # Set appropriate igbinary version based on PHP version
+        PHP_MAJOR_VERSION=$(echo "${PHP2_VERSION}" | cut -c1)
+        PHP_MINOR_VERSION=$(echo "${PHP2_VERSION}" | cut -c2-)
+        
         if [[ "${PHP2_VERSION}" == "5.6" ]]; then
             IG_BINARY_VERSION="2.0.8"
+        elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -ge "2" ]; then
+            # For PHP 8.2+ ensure we use a compatible version
+            IG_BINARY_VERSION="3.2.7"
         fi
 
         DIR="/opt/php-extension"
@@ -153,8 +176,15 @@ _install_php_memcached(){
     check_ig_binary_php2=$(php"${PHP2_VERSION}" -m | grep igbinary)
 
     if [  -n "${check_ig_binary_php2}" ] && service_running 'memcached' ; then
+        # Set appropriate memcached version based on PHP version
+        PHP_MAJOR_VERSION=$(echo "${PHP2_VERSION}" | cut -c1)
+        PHP_MINOR_VERSION=$(echo "${PHP2_VERSION}" | cut -c2-)
+        
         if [[ "${PHP2_VERSION}" == "5.6" ]]; then
             PHP_MEMCACHED_VERSION="2.2.0"
+        elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -ge "2" ]; then
+            # For PHP 8.2+ use latest compatible version
+            PHP_MEMCACHED_VERSION="3.2.0"
         fi
 
         DIR="/opt/php-extension"
@@ -168,7 +198,14 @@ _install_php_memcached(){
         wget "${MODULE_LINK}"/memcached-"${PHP_MEMCACHED_VERSION}".tgz
         tar -xvf memcached-"${PHP_MEMCACHED_VERSION}".tgz
         _cd_dir "memcached-${PHP_MEMCACHED_VERSION}"
-        /usr/bin/phpize"${PHP2_VERSION}" && ./configure --enable-memcached-igbinary --with-php-config=/usr/bin/php-config"${PHP2_VERSION}"
+        
+        # Configure options change based on PHP version
+        if [ "${PHP_MAJOR_VERSION}" -lt "8" ]; then
+            /usr/bin/phpize"${PHP2_VERSION}" && ./configure --enable-memcached-igbinary --with-php-config=/usr/bin/php-config"${PHP2_VERSION}"
+        else
+            /usr/bin/phpize"${PHP2_VERSION}" && ./configure --enable-memcached --enable-memcached-igbinary --with-php-config=/usr/bin/php-config"${PHP2_VERSION}"
+        fi
+        
         make && make install
         cd "${DIR}" && rm -rf memcached-"${PHP_MEMCACHED_VERSION}".tgz memcached-"${PHP_MEMCACHED_VERSION}"
 
@@ -185,8 +222,15 @@ _install_php_redis(){
     check_ig_binary_php2=$(php"${PHP2_VERSION}" -m | grep igbinary)
 
     if [  -n "${check_ig_binary_php2}" ] && service_running 'redis' ; then
+        # Set appropriate redis version based on PHP version
+        PHP_MAJOR_VERSION=$(echo "${PHP2_VERSION}" | cut -c1)
+        PHP_MINOR_VERSION=$(echo "${PHP2_VERSION}" | cut -c2-)
+        
         if [[ "${PHP2_VERSION}" == "5.6" ]]; then
             PHP_REDIS_VERSION="4.3.0"
+        elif [ "${PHP_MAJOR_VERSION}" -eq "8" ] && [ "${PHP_MINOR_VERSION}" -ge "2" ]; then
+            # For PHP 8.2+ ensure we use a compatible version
+            PHP_REDIS_VERSION="5.3.7"
         fi
 
         DIR="/opt/php-extension"
@@ -194,13 +238,20 @@ _install_php_redis(){
         if [ -f "redis-${PHP_REDIS_VERSION}.tgz" ]; then
             rm -rf redis-"${PHP_REDIS_VERSION}".tgz
         fi
-        if [ -d "memcached-${PHP_REDIS_VERSION}" ]; then
+        if [ -d "redis-${PHP_REDIS_VERSION}" ]; then
             rm -rf redis-"${PHP_REDIS_VERSION}"
         fi
         wget "${MODULE_LINK}"/redis-"${PHP_REDIS_VERSION}".tgz
         tar -xvf redis-"${PHP_REDIS_VERSION}".tgz
         _cd_dir "${DIR}/redis-${PHP_REDIS_VERSION}"
-        /usr/bin/phpize"${PHP2_VERSION}" && ./configure --enable-redis-igbinary --with-php-config=/usr/bin/php-config"${PHP2_VERSION}"
+        
+        # Configure options may change based on PHP version
+        if [ "${PHP_MAJOR_VERSION}" -lt "8" ]; then
+            /usr/bin/phpize"${PHP2_VERSION}" && ./configure --enable-redis-igbinary --with-php-config=/usr/bin/php-config"${PHP2_VERSION}"
+        else
+            /usr/bin/phpize"${PHP2_VERSION}" && ./configure --enable-redis --enable-redis-igbinary --with-php-config=/usr/bin/php-config"${PHP2_VERSION}"
+        fi
+        
         make && make install
         cd "${DIR}" && rm -rf redis-"${PHP_REDIS_VERSION}".tgz redis-"${PHP_REDIS_VERSION}"
 

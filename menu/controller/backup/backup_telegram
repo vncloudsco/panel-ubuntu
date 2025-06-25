@@ -10,16 +10,16 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/menu/validate/rule
-source /var/hostvn/menu/helpers/function
+source /var/tinycp/menu/validate/rule
+source /var/tinycp/menu/helpers/function
 
 _check_telegram_config() {
-    if [ ! -f "/var/hostvn/telegram/.telegram_backup_config" ]; then
+    if [ ! -f "/var/tinycp/telegram/.telegram_backup_config" ]; then
         return 1
     fi
     
-    TELEGRAM_BOT_TOKEN=$(grep -w "telegram_bot_token" "/var/hostvn/telegram/.telegram_backup_config" | cut -f2 -d'=')
-    TELEGRAM_CHAT_ID=$(grep -w "telegram_chat_id" "/var/hostvn/telegram/.telegram_backup_config" | cut -f2 -d'=')
+    TELEGRAM_BOT_TOKEN=$(grep -w "telegram_bot_token" "/var/tinycp/telegram/.telegram_backup_config" | cut -f2 -d'=')
+    TELEGRAM_CHAT_ID=$(grep -w "telegram_chat_id" "/var/tinycp/telegram/.telegram_backup_config" | cut -f2 -d'=')
     
     if [[ -z "${TELEGRAM_BOT_TOKEN}" || -z "${TELEGRAM_CHAT_ID}" ]]; then
         return 1
@@ -64,12 +64,12 @@ _setup_telegram_config() {
         -d "disable_web_page_preview=true")
     
     if echo "${response}" | grep -q '"ok":true'; then
-        mkdir -p /var/hostvn/telegram
-        cat > "/var/hostvn/telegram/.telegram_backup_config" << EOF
+        mkdir -p /var/tinycp/telegram
+        cat > "/var/tinycp/telegram/.telegram_backup_config" << EOF
 telegram_bot_token=${TELEGRAM_BOT_TOKEN}
 telegram_chat_id=${TELEGRAM_CHAT_ID}
 EOF
-        chmod 600 "/var/hostvn/telegram/.telegram_backup_config"
+        chmod 600 "/var/tinycp/telegram/.telegram_backup_config"
         printf "%s\n" "${GREEN}Cau hinh Telegram thanh cong!${NC}"
         return 0
     else
@@ -172,8 +172,8 @@ _telegram_backup() {
     fi
     
     # Load Telegram config
-    TELEGRAM_BOT_TOKEN=$(grep -w "telegram_bot_token" "/var/hostvn/telegram/.telegram_backup_config" | cut -f2 -d'=')
-    TELEGRAM_CHAT_ID=$(grep -w "telegram_chat_id" "/var/hostvn/telegram/.telegram_backup_config" | cut -f2 -d'=')
+    TELEGRAM_BOT_TOKEN=$(grep -w "telegram_bot_token" "/var/tinycp/telegram/.telegram_backup_config" | cut -f2 -d'=')
+    TELEGRAM_CHAT_ID=$(grep -w "telegram_chat_id" "/var/tinycp/telegram/.telegram_backup_config" | cut -f2 -d'=')
     
     local backup_dir="/tmp/telegram_backup_${RANDOM}"
     mkdir -p "${backup_dir}"

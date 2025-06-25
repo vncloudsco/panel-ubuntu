@@ -2,8 +2,9 @@
 
 ######################################################################
 #           Auto Install & Optimize LEMP Stack on Ubuntu             #
-#                Author: Sanvv - HOSTVN Technical                    #
-#                  Website: https://hostvn.vn                        #
+#                                                                    #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
 #                                                                    #
 #              Please do not remove copyright. Thank!                #
 #  Please do not copy under any circumstance for commercial reason!  #
@@ -57,7 +58,7 @@ lang_manager_wordpress="WordPress Manager"
 lang_manager_backup_restore="Backup/Restore"
 lang_manager_vps="VPS Manager"
 lang_manager_tool="Tools"
-lang_manager_update_scripts="Update HOSTVN Scripts"
+lang_manager_update_scripts="Update Tiny Scripts"
 lang_account_manager="View account information"
 lang_cancel_action="Cancel action."
 account_information="Account information"

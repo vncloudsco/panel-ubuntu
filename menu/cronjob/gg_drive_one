@@ -3,16 +3,16 @@
 ######################################################################
 #           Auto Install & Optimize LEMP Stack on Ubuntu             #
 #                                                                    #
-#                Author: Sanvv - HOSTVN Technical                    #
-#                  Website: https://hostvn.vn                        #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
 #                                                                    #
 #              Please do not remove copyright. Thank!                #
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/ipaddress
-source /var/hostvn/.hostvn.conf
-source /var/hostvn/menu/helpers/variable_common
+source /var/tinycp/ipaddress
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/helpers/variable_common
 
 for domains in "${BASH_DIR}"/ggdrive/*; do
     domain=$(echo "$domains" | cut -f5 -d'/')

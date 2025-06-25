@@ -3,16 +3,16 @@
 ######################################################################
 #           Auto Install & Optimize LEMP Stack on Ubuntu             #
 #                                                                    #
-#                Author: Sanvv - HOSTVN Technical                    #
-#                  Website: https://hostvn.vn                        #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
 #                                                                    #
 #              Please do not remove copyright. Thank!                #
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
-source /var/hostvn/ipaddress
-source /var/hostvn/.hostvn.conf
-source /var/hostvn/menu/helpers/variable_common
+source /var/tinycp/ipaddress
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/helpers/variable_common
 onedrive_folder_name=$(grep -w "onedrive_folder_name" "${FILE_INFO}" | cut -f2 -d'=')
 
 for domains in "${BASH_DIR}"/onedrive/*; do

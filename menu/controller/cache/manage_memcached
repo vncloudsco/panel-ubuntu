@@ -11,8 +11,8 @@
 ######################################################################
 
 # shellcheck disable=SC1091
-source /var/hostvn/menu/route/parent
-source /var/hostvn/menu/validate/rule
+source /var/tinycp/menu/route/parent
+source /var/tinycp/menu/validate/rule
 
 CHOICE=1
 memcached_status=$(pgrep memcached >/dev/null && printf "%s\n" "${GREEN}Hoat dong${NC}" || printf "%s\n" "${GREEN}Khong hoat dong${NC}")

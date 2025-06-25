@@ -1,143 +1,361 @@
-<p align="center"><strong>Auto Install & Optimize LEMP Stack on Ubuntu (18.04, 20.04)</strong></p>
-<p align="center"><strong>Author: Sanvv - HOSTVN.NET Technical</strong></p>
-<p align="center"><strong>Home Page: <a href="https://hostvn.vn/">Hostvn Scripts Home page</a> , <a href="https://hostvn.net">Hostvn.net - Tên miền, Web Hosting, Email, VPS &amp; Dịch vụ lưu trữ Website</a></strong></p>
-<p align="center"><strong>Document: https://help.hostvn.vn/</strong></p>
-<p align="center"><strong>Groups Support: https://www.facebook.com/groups/hostvn.vn</strong></p>
+<div align="center">
 
-<p align="center"> <img src="https://blog.hostvn.net/wp-content/uploads/2020/07/logo-big-2.png" /> </p>
+# 🚀 TinyPanel - Trình cài đặt & Tối ưu LEMP Stack
 
-########################################################################################
+[![Cài đặt & Tối ưu LEMP Stack](https://img.shields.io/badge/LEMP-Installer-blue?style=for-the-badge)](https://tinyactive.github.io/panel)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-18.04%20|%2024.04-orange?style=for-the-badge&logo=ubuntu)](https://ubuntu.com)
 
-Script được viết bằng shell dùng để cài đặt LEMP Stack (Nginx - MariaDB - PHP-FPM) trên Ubuntu (18.04, 20.04), Debian 10.
+<img src="https://tinyactive.com/wp-content/uploads/2024/02/Asset-5.svg" width="300px" />
 
-<b>Vui lòng không sao chép, phát hành lại với mục đích thương mại, donate. Xin cảm ơn.</b>
+**Cài đặt LEMP stack nhanh, an toàn và tối ưu cho VPS của bạn**
 
-## 1. Chi tiết Script:
+[📚 Tài liệu](https://tiny-panel.gitbook.io/) | 
+[👥 Nhóm hỗ trợ](https://www.facebook.com/groups/hostvn.vn) | 
+[🌐 Trang chủ](https://hostvn.vn/)
 
-### 1.1. Cài đặt
+</div>
 
-- Cập nhật liên tục, cung cấp Menu giúp dễ dàng thao tác, tự động cài đặt.
-- Cài đặt các phần mềm với phiên bản mới nhất từ chính trang chủ.
-- Mariadb: 10.5.
-- Phiên bản Nginx Stable.
-- Cho phép lựa chọn phiên bản PHP: 5.6, 7.0, 7.1, 7.2, 7.3, 7.4, 8.0
-- phpMyAdmin 4.9.x nếu cài đặt PHP mặc định là 5.6, phpMyAdmin 5.0.x nếu cài đặt PHP mặc định là 7.x.
-- Cấu hình Nginx FastCGI cache
-- Cài đặt PHPMemcachedAdmin, phpRedisAdmin, Opcache Dashboard.
-- Cài đặt memcached, redis cache. (Mặc định sẽ không bật).
-- Cài đặt Fail2ban.
-- Tích hợp Let's Encrypt SSL.
-- Tích hợp CloudFlare DNS API giúp xác thực SSL nhanh hơn.
-- Cung cấp Menu nâng cấp Nginx, MariaDB, PHP, Redis, Memcached, phpMyAdmin.
-- Cài đặt WP-CLI, Composer, supervisor, Rclone.
-- Cài đặt: ClamAV, ImunifyAV.
-- KHÔNG THU THẬP BẤT KỲ THÔNG TIN GÌ TRÊN VPS CỦA BẠN KỂ CẢ IP MỌI THỨ ĐƯỢC LƯU TRỮ TRÊN GITHUB CÔNG KHAI
+---
 
-### 1.2. Tối ưu
+> TinyPanel giúp cài đặt và cấu hình Nginx, MariaDB, PHP với các thiết lập tối ưu về hiệu năng và bảo mật. Viết bằng Bash shell script cho Ubuntu (18.04 tới 24.04)
+<div align="center">
+⚠️ LƯU Ý: Nghiêm cấm phân phối lại hoặc đóng gói lại dự án này cho mục đích thương mại.
+</div>
 
-- Cấu hình tối ưu MySQL, Nginx, PHP, Opcache, Memcached, Redis phù hợp theo thông số của VPS.
-- Cấu hình Brotli Compress.
-- Cấu hình rewrite URL với một số mã nguồn phổ biến: WordPress, Laravel, Opencart, Magento, Drupal ...
-- Cho phép chạy song song hai phiên bản PHP.
-- Quản lý FTP dễ dàng trong trường hợp bạn thuê coder và chỉ muốn họ được phép access vào thư mục nhất định.
-- Cho phép lựa chọn Redis Cache hoặc Memcached giúp tăng tốc độ website.
-- Cho phép cấu hình tự động gia hạn Let's Encrypt.
-- Menu hỗ trợ cấu hình SSL trả phí.
-- Menu xem error log Nginx, Mysql, PHP và xem theo từng tên miền cụ thể.
-- Cronjob tự động cập nhật dải IP mới nhất của Cloudflare cho Nginx và CSF Firewall.
-- And More ...
+## 📋 Tính năng nổi bật
 
-### 1.3. Bảo mật
+### 💻 Cài đặt
 
-- Cấu hình tăng cường bảo mật từ tầng webserver.
-- Cấu hình website chạy với user khác nhau hạn chế lây lan mã độc giữa các website.
-- Disable các hàm nguy hiểm, bật open_basedir và một số config khác nhằm tăng cường bảo mật.
-- Auto block bruteforce SSH, SFTP, Admin Tool .... với Fail2ban.
-- Block run shell trong thư mục uploads WordPress. Chặn truy cập các thư mục, file nhạy cảm trên WordPress.
-- Chống Bruteforce wp-admin.
-- BLock, Unblock IP dễ dàng với menu quản lý Firewall.
-- Disable User API - /wp-json/wp/v2/users - trên WordPress tránh lộ thông tin User.
-- Thay đổi Port SSH tránh scan SSH.
-- Cho phép thay đổi port Admin.
-- Cho phép thay đổi port SSH/SFTP.
-- Tự động tạo mật khẩu mạnh.
-- Scan Malware với Clamav, ImunifyAV.
-- And More ...
+<table>
+  <tr>
+    <td width="50%">
+      <ul>
+        <li>✅ Menu dễ sử dụng, cập nhật thường xuyên</li>
+        <li>✅ MariaDB 10.5 cấu hình tối ưu</li>
+        <li>✅ Nginx phiên bản mới nhất</li>
+        <li>✅ Hỗ trợ nhiều phiên bản PHP (5.6, 7.0-7.4 8.0-8.4)</li>
+        <li>✅ Cấu hình FastCGI cache cho Nginx</li>
+        <li>✅ Redis & Memcached cho cache</li>
+        <li>✅ Tích hợp SSL Let's Encrypt</li>
+        <li>✅ Hỗ trợ CloudFlare DNS API xác thực SSL nhanh</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <ul>
+        <li>✅ phpMyAdmin 4.9.x/5.0.x theo phiên bản PHP</li>
+        <li>✅ PHPMemcachedAdmin & phpRedisAdmin</li>
+        <li>✅ Bảng điều khiển Opcache</li>
+        <li>✅ Fail2ban bảo vệ an ninh</li>
+        <li>✅ WP-CLI, Composer, Supervisor, Rclone</li>
+        <li>✅ Quét mã độc với ClamAV & ImunifyAV</li>
+        <li>✅ Menu nâng cấp tất cả thành phần</li>
+        <li>✅ <b>Không thu thập dữ liệu VPS</b></li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-### 1.4. Quản lý WordPress
+### ⚡ Tối ưu hóa
 
-- Kiểm tra phiên bản WordPress đang sử dụng.
-- Cập nhật WordPress.
-- Cập nhật plugins.
-- Tối ưu Database.
-- Repair Database.
-- Sao lưu dữ liệu (Local/GG Drive).
-- Khôi phục dữ liệu (Local/GG Drive).
-- Thay đổi tên miền.
-- Đổi mật khẩu admin (wp-admin).
-- Cài đặt WordPress tự động.
-- Bật/tắt Yoast Seo config.
-- Bật/Tắt Rank Math Seo config.
-- Cấu hình Nginx với một số plugins cache phổ biến: WP-Rocket, w3 total cache, wp supercache, Cache Enabler, Swift Performance, Fast cache.
-- Thêm cache key tránh trùng lặp nội dung giữa các site khi dùng memcached hoặc redis.
-- Bật/tắt Debug.
-- Bật/tắt chế độ bảo trì.
-- Bật/Tắt disable xmlrpc (Mặc định sẽ disable xmlrpc để tránh bị khai thác DDOS).
-- Huỷ kích hoạt toàn bộ plugins.
-- Random database prefix khi sử dụng chức năng cài đặt tự động.
-- And more ...
+<table>
+  <tr>
+    <td width="50%">
+      <ul>
+        <li>🔥 Tối ưu MySQL, Nginx, PHP theo VPS</li>
+        <li>🔥 Hỗ trợ nén Brotli tăng tốc tải trang</li>
+        <li>🔥 Cấu hình rewrite cho các framework phổ biến:
+          <ul>
+            <li>WordPress</li>
+            <li>Laravel</li>
+            <li>Magento</li>
+            <li>OpenCart</li>
+            <li>Drupal</li>
+          </ul>
+        </li>
+        <li>🔥 Chạy song song 2 phiên bản PHP</li>
+        <li>🔥 Tùy chọn Redis hoặc Memcached</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <ul>
+        <li>🔥 Quản lý FTP chi tiết cho lập trình viên</li>
+        <li>🔥 Tự động gia hạn SSL Let's Encrypt</li>
+        <li>🔥 Hỗ trợ cấu hình SSL trả phí</li>
+        <li>🔥 Xem log lỗi theo tên miền (Nginx, MySQL, PHP)</li>
+        <li>🔥 Tự động cập nhật IP CloudFlare cho Nginx & CSF</li>
+        <li>🔥 Triển khai web app dễ dàng</li>
+        <li>🔥 Và nhiều tính năng khác...</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-### 1.5. Sao lưu/Khôi phục dữ liệu
-- Backup và restore dữ liệu từ Google Drive với Rclone.
-- Backup lên Telegram thông qua Proxy API và không hỗ trợ restore trong tools . ([chi tiết tính năng](https://tiny-panel.gitbook.io/tiny-panel-docs/telegram?fallback=true))
-- Backup, restore tại Local.
-- Thiết lập số bản backup lưu trữ.
-- Quản lý các bản sao lưu.
-- Cho phép kết nối nhiều tài khoản Google Drive.
+### 🔒 Bảo mật
 
-## 2. Yêu cầu
+<table>
+  <tr>
+    <td width="50%">
+      <ul>
+        <li>🛡️ Cấu hình bảo mật web server nâng cao</li>
+        <li>🛡️ Cô lập user theo website, chống lây nhiễm mã độc</li>
+        <li>🛡️ Vô hiệu hóa hàm PHP nguy hiểm & open_basedir</li>
+        <li>🛡️ Tự động chặn brute force với Fail2ban:
+          <ul>
+            <li>Bảo vệ SSH</li>
+            <li>Bảo vệ SFTP</li>
+            <li>Bảo vệ công cụ quản trị</li>
+          </ul>
+        </li>
+        <li>🛡️ Tăng cường bảo mật WordPress:
+          <ul>
+            <li>Chặn shell trong thư mục uploads</li>
+            <li>Bảo vệ file/thư mục nhạy cảm</li>
+            <li>Bảo vệ wp-admin khỏi brute force</li>
+            <li>Vô hiệu hóa API liệt kê user</li>
+          </ul>
+        </li>
+      </ul>
+    </td>
+    <td width="50%">
+      <ul>
+        <li>🛡️ Quản lý Firewall chặn/mở IP dễ dàng</li>
+        <li>🛡️ Tùy chỉnh cổng:
+          <ul>
+            <li>Đổi cổng SSH</li>
+            <li>Đổi cổng Admin</li>
+            <li>Đổi cổng SFTP</li>
+          </ul>
+        </li>
+        <li>🛡️ Tạo mật khẩu mạnh</li>
+        <li>🛡️ Quét mã độc với:
+          <ul>
+            <li>ClamAV</li>
+            <li>ImunifyAV</li>
+          </ul>
+        </li>
+        <li>🛡️ Cập nhật bảo mật thường xuyên</li>
+        <li>🛡️ Và nhiều tính năng bảo mật khác...</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-- VPS tối thiểu 512MB ram và chưa cài đặt bất kỳ dịch vụ nào.
-- Ubuntu 18.04, 20.04, Debian 10.
+### 🔌 Quản lý WordPress
 
-## 3. Cách cài đặt
+<div align="center">
+  <img src="https://s.w.org/style/images/about/WordPress-logotype-standard.png" width="250px" />
+</div>
 
-```curl -sO https://tinyactive.github.io/panel/install && chmod +x install && ./install```
+<table>
+  <tr>
+    <td width="33%">
+      <h4>Quản lý lõi</h4>
+      <ul>
+        <li>🔧 Kiểm tra phiên bản WordPress</li>
+        <li>🔧 Cập nhật lõi WordPress</li>
+        <li>🔧 Cập nhật plugin</li>
+        <li>🔧 Tự động cài đặt</li>
+        <li>🔧 Đổi tên miền</li>
+        <li>🔧 Đổi mật khẩu admin</li>
+        <li>🔧 Ngẫu nhiên tiền tố DB tăng bảo mật</li>
+      </ul>
+    </td>
+    <td width="33%">
+      <h4>Cơ sở dữ liệu & Tối ưu</h4>
+      <ul>
+        <li>📊 Tối ưu database</li>
+        <li>📊 Sửa chữa database</li>
+        <li>📊 Tùy chỉnh cache key Redis/Memcached</li>
+        <li>📊 Cấu hình Nginx cho plugin cache phổ biến:
+          <ul>
+            <li>WP-Rocket</li>
+            <li>W3 Total Cache</li>
+            <li>WP Super Cache</li>
+            <li>Cache Enabler</li>
+            <li>Swift Performance</li>
+            <li>Fast Cache</li>
+          </ul>
+        </li>
+      </ul>
+    </td>
+    <td width="33%">
+      <h4>Tính năng & Bảo mật</h4>
+      <ul>
+        <li>🛠️ Cấu hình plugin SEO:
+          <ul>
+            <li>Yoast SEO</li>
+            <li>Rank Math</li>
+          </ul>
+        </li>
+        <li>🛠️ Bật/tắt chế độ bảo trì</li>
+        <li>🛠️ Bật/tắt debug</li>
+        <li>🛠️ Bật/tắt xmlrpc</li>
+        <li>🛠️ Vô hiệu hóa toàn bộ plugin</li>
+        <li>🛠️ Nhiều công cụ WordPress khác...</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-## 4. Các tính năng sẽ phát triển
+### 💾 Sao lưu & Khôi phục
 
-- Các tính năng theo request của người dùng
+<table>
+  <tr>
+    <td width="50%">
+      <h4>Điểm đến sao lưu</h4>
+      <ul>
+        <li>📁 Sao lưu & khôi phục trên máy chủ</li>
+        <li>📁 Sao lưu & khôi phục Google Drive qua Rclone</li>
+        <li>📁 Hỗ trợ nhiều tài khoản Google Drive</li>
+        <li>📁 Sao lưu qua Telegram (Proxy API)
+          <a href="https://tiny-panel.gitbook.io/tiny-panel-docs/telegram?fallback=true">(Chi tiết)</a>
+        </li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h4>Quản lý sao lưu</h4>
+      <ul>
+        <li>📂 Cấu hình chính sách lưu trữ</li>
+        <li>📂 Duyệt & quản lý file sao lưu</li>
+        <li>📂 Tự động sao lưu theo lịch</li>
+        <li>📂 Tùy chọn nội dung sao lưu</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-## 5. Cách sử dụng
+## ⚙️ Yêu cầu hệ thống
 
-- Vui lòng truy cập: https://help.hostvn.vn/
+<table>
+  <tr>
+    <td width="50%">
+      <ul>
+        <li>🖥️ VPS tối thiểu 512MB RAM</li>
+        <li>🖥️ Máy chủ sạch (không cài sẵn dịch vụ)</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <ul>
+        <li>🖥️ Ubuntu 18.04, 20.04 hoặc Debian 10</li>
+        <li>🖥️ Yêu cầu quyền root</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-## 6. Nguồn download các phần mềm
+## 🚀 Cài đặt nhanh
 
-- Nginx: http://nginx.org/en/download.html
-- MariaDB: https://downloads.mariadb.org/
-- PHP: https://www.php.net/
-- phpMyAdmin: https://www.phpmyadmin.net/
-- PHPMemcachedAdmin: https://github.com/elijaa/phpmemcachedadmin
-- phpRedisAdmin: https://github.com/erikdubbelboer/phpRedisAdmin
-- Rclone: https://rclone.org/
-- WP-CLI: https://wp-cli.org/
-- Composer: https://getcomposer.org/
-- ClamAV: https://www.clamav.net/
-- ImunifyAV: https://www.imunify360.com/antivirus
+```bash
+curl -sO https://tinyactive.github.io/panel/install && chmod +x install && ./install
+```
 
-## 7. Contact
+## 📘 Tài liệu & Hướng dẫn sử dụng
 
-- Homepage: https://hostvn.vn , https://hostvn.net
-- Group: hhttps://www.facebook.com/groups/hostvn.vn
-- Email: Sanvv@hostvn.com
+Xem chi tiết tài liệu và hướng dẫn tại:
+[https://help.hostvn.vn/](https://help.hostvn.vn/)
 
-## 8. Feedback
+## 🗺️ Lộ trình phát triển
 
-- Do chưa có nhiều kinh nghiệm nên Scripts khó tránh khỏi thiếu sót, rất mong nhận được ý kiến đóng góp của các bạn để Scripts ngày càng hoàn thiện hơn.
-- Mọi ý kiến đóng góp các bạn vui lòng gửi về sanvv@hostvn.com, Groups Facebook: https://www.facebook.com/groups/hostvn.vn hoặc tạo Github Issues.
+- Thêm tính năng mới theo góp ý cộng đồng
+- Bổ sung kỹ thuật tối ưu hóa
+- Hỗ trợ các phiên bản Ubuntu/Debian mới
+- Tăng cường bảo mật
 
-## 9. Contributors & Credits
-### Developers / Maintainers
-- Sanvv
-- Mạnh Tường
+## 🔧 Công nghệ sử dụng
+
+<table>
+  <tr>
+    <td width="33%">
+      <h4>Thành phần chính</h4>
+      <ul>
+        <li><a href="http://nginx.org/en/download.html">Nginx</a></li>
+        <li><a href="https://downloads.mariadb.org/">MariaDB</a></li>
+        <li><a href="https://www.php.net/">PHP</a></li>
+        <li><a href="https://www.clamav.net/">ClamAV</a></li>
+        <li><a href="https://www.imunify360.com/antivirus">ImunifyAV</a></li>
+      </ul>
+    </td>
+    <td width="33%">
+      <h4>Công cụ quản trị</h4>
+      <ul>
+        <li><a href="https://www.phpmyadmin.net/">phpMyAdmin</a></li>
+        <li><a href="https://github.com/elijaa/phpmemcachedadmin">PHPMemcachedAdmin</a></li>
+        <li><a href="https://github.com/erikdubbelboer/phpRedisAdmin">phpRedisAdmin</a></li>
+        <li><a href="https://rclone.org/">Rclone</a></li>
+      </ul>
+    </td>
+    <td width="33%">
+      <h4>Công cụ phát triển</h4>
+      <ul>
+        <li><a href="https://wp-cli.org/">WP-CLI</a></li>
+        <li><a href="https://getcomposer.org/">Composer</a></li>
+        <li>Supervisor</li>
+        <li>Let's Encrypt</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+## 📞 Liên hệ & Hỗ trợ
+
+<table>
+  <tr>
+    <td width="50%">
+      <h4>Kênh chính thức</h4>
+      <ul>
+        <li>🌐 <b>Website</b>: 
+          <a href="https://hostvn.vn">hostvn.vn</a>, 
+          <a href="https://hostvn.net">hostvn.net</a>
+        </li>
+        <li>👥 <b>Nhóm Facebook</b>: 
+          <a href="https://www.facebook.com/groups/hostvn.vn">Cộng đồng HOSTVN</a>
+        </li>
+        <li>📧 <b>Email</b>: 
+          <a href="mailto:sanvv@hostvn.com">sanvv@hostvn.com</a>
+        </li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h4>Góp ý & Đóng góp</h4>
+      <ul>
+        <li>🐛 Báo lỗi qua <a href="https://github.com/TinyActive/panel/issues">GitHub Issues</a></li>
+        <li>💡 Đề xuất tính năng qua nhóm Facebook</li>
+        <li>🔧 Đóng góp code qua Pull Request</li>
+        <li>📝 Cải thiện tài liệu</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<p>Chúng tôi luôn lắng nghe góp ý để cải thiện TinyPanel. Mọi ý kiến đóng góp đều giúp dự án tốt hơn cho cộng đồng!</p>
+
+## 👨‍💻 Đội ngũ & Ghi nhận
+
+<table>
+  <tr>
+    <td width="50%">
+      <h4>Nhà phát triển chính</h4>
+      <ul>
+        <li>👨‍💻 <b>Sanvv</b> - Lập trình viên chính</li>
+        <li>👨‍💻 <b>Mạnh Tường</b> - Lập trình viên</li>
+      </ul>
+    </td>
+    <td width="50%">
+      <h4>Dựa trên</h4>
+      <ul>
+        <li>🏆 Script gốc HOSTVN.VN</li>
+        <li>🏆 Đóng góp từ cộng đồng mã nguồn mở</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<div align="center">
+  <p>
+    <sub>© 2025 TinyPanel - Dựa trên HOSTVN Scripts</sub>
+  </p>
+  <p>
+    <a href="https://github.com/TinyActive/panel/blob/main/Contributors.md">Hướng dẫn đóng góp</a> •
+    <a href="https://github.com/TinyActive/panel/blob/main/changelog.txt">Lịch sử thay đổi</a>
+  </p>
+</div>
