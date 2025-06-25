@@ -10,7 +10,7 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 CHOICE=1
-MODULES_LINK="https://tinyactive.github.io/panel/modules"
+MODULES_LINK="${HOME_PAGE}/modules"
 nginx_v=$(
     nginx -v 2>&1 | grep -o '[0-9.]*$'
     echo
@@ -65,7 +65,7 @@ while [ "${CHOICE}" != "0" ]; do
         ;;
     3)
         clear
-        UPDATE_LINK="https://tinyactive.github.io/panel/update"
+        UPDATE_LINK="${HOME_PAGE}/update"
         NGINX_NEW_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nginx_new_version=" | cut -f2 -d'=')
         NGINX_CURRENT_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nginx_version=" | cut -f2 -d'=')
         if [[ -n "$NGINX_NEW_VERSION" && "$NGINX_NEW_VERSION" != "$NGINX_CURRENT_VERSION" ]]; then
@@ -153,7 +153,7 @@ while [ "${CHOICE}" != "0" ]; do
         ;;
     4)
         clear
-        UPDATE_LINK="https://tinyactive.github.io/panel/update"
+        UPDATE_LINK="${HOME_PAGE}/update"
         NGINX_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nginx_version=" | cut -f2 -d'=')
         MODULE_PATH="/usr/share/nginx_module"
         mkdir -p "${MODULE_PATH}"

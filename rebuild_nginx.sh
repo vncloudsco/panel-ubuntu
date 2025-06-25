@@ -25,9 +25,9 @@ apt-get update && apt-get install -y \
     curl
 
 # Configuration
-readonly UPDATE_LINK="https://tinyactive.github.io/panel/update"
+readonly UPDATE_LINK="${HOME_PAGE}/update"
 readonly MODULE_PATH="/usr/share/nginx_module"
-readonly MODULES_LINK="https://tinyactive.github.io/panel/modules"
+readonly MODULES_LINK="${HOME_PAGE}/modules"
 
 # Create module directory
 mkdir -p "${MODULE_PATH}"

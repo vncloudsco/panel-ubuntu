@@ -10,6 +10,33 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
+# set evironment variables in /etc/environment
+if [[ -f /etc/environment ]]; then
+    echo "HOME_PAGE=https://tinyactive.github.io/panel" > /etc/environment
+    export $(grep -v '^#' /etc/environment | xargs)
+ else
+    echo "HOME_PAGE=https://tinyactive.github.io/panel" > /etc/environment
+    export $(grep -v '^#' /etc/environment | xargs)
+fi
+
+
+# Check if the script is run as root
+if [[ "$(id -u)" != "0" ]]; then
+    echo "This script must be run as root. Please use 'sudo' or switch to the root user."
+    exit 1
+fi
+
+#check evironment variables 
+if [[ -z "${HOME_PAGE}" ]]; then    
+    echo "HOME_PAGE variable is not set. creat issue github report bug with info os."
+    echo ${date +%Y-%m-%d %H:%M:%S}
+    echo $(cat /etc/os-release)
+    echo $(uname -a)
+    exit 1
+fi
+
+
+# Remove old install folder
 rm -rf install
 
 # Set Color
@@ -18,7 +45,7 @@ NC='\033[0m'
 
 OS=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"')
 
-SCRIPT_LINK="https://tinyactive.github.io/panel/${OS}"
+SCRIPT_LINK="${HOME_PAGE}/${OS}"
 OS_LIST="ubuntu debian"
 RAM_TOTAL=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
 LOW_RAM='400000'
