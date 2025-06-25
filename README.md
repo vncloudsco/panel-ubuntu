@@ -9,7 +9,7 @@
 
 **Cài đặt LEMP stack nhanh, an toàn và tối ưu cho VPS của bạn**
 
-[📚 Tài liệu](https://help.hostvn.vn/) | 
+[📚 Tài liệu](https://tiny-panel.gitbook.io/) | 
 [👥 Nhóm hỗ trợ](https://www.facebook.com/groups/hostvn.vn) | 
 [🌐 Trang chủ](https://hostvn.vn/)
 
