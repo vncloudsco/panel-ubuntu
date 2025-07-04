@@ -346,139 +346,6 @@ check_duplicate_php() {
     fi
 }
 
-############################################
-# Install LEMP Stack
-############################################
-#install_nginx() {
-#    apt-get install -y curl gnupg2 ca-certificates lsb-release
-#    apt-get install build-essential zlib1g-dev libpcre3 libpcre3-dev unzip uuid-dev -y
-#    apt-get install -y git build-essential libpcre3 libpcre3-dev libssl-dev libtool autoconf apache2-dev libxml2-dev \
-#        libcurl4-openssl-dev automake pkgconf -y
-#    apt autoremove -y
-#    # shellcheck disable=SC2006
-#    echo "deb http://nginx.org/packages/ubuntu $(lsb_release -cs) nginx" |
-#        tee /etc/apt/sources.list.d/nginx.list
-#    curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add -
-#    apt-key fingerprint ABF5BD827BD9BF62
-#    apt-get -y update
-#    apt-get -y install nginx
-#
-#    systemctl start nginx
-#    systemctl enable nginx
-#}
-
-#install_nginx(){
-#    apt-get install build-essential zlib1g-dev libpcre3 libpcre3-dev unzip uuid-dev -y
-#    apt autoremove -y
-#    UPDATE_LINK="https://scripts.hostvn.net/update"
-#    MODULE_PATH="/usr/share/nginx_module"
-#    mkdir -p "${MODULE_PATH}"
-#    NGINX_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nginx_version=" | cut -f2 -d'=')
-#    NPS_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "nps_version=" | cut -f2 -d'=')
-#    ngx_cache_purge_version=$(curl -s ${UPDATE_LINK}/version | grep "ngx_cache_purge_version=" | cut -f2 -d'=')
-#    openssl_version=$(curl -s ${UPDATE_LINK}/version | grep "openssl_version=" | cut -f2 -d'=')
-#    pcre_version=$(curl -s ${UPDATE_LINK}/version | grep "pcre_version=" | cut -f2 -d'=')
-#    zlib_version=$(curl -s ${UPDATE_LINK}/version | grep "zlib_version=" | cut -f2 -d'=')
-#
-#    cd_dir "${MODULE_PATH}"
-#
-#    wget -O- https://github.com/apache/incubator-pagespeed-ngx/archive/v"${NPS_VERSION}".tar.gz | tar -xz
-#    nps_dir=$(find . -name "*pagespeed-ngx-${NPS_VERSION}" -type d)
-#    cd_dir "$nps_dir"
-#    NPS_RELEASE_NUMBER=${NPS_VERSION/beta/}
-#    NPS_RELEASE_NUMBER=${NPS_VERSION/stable/}
-#
-#    psol_url=https://dl.google.com/dl/page-speed/psol/${NPS_RELEASE_NUMBER}.tar.gz
-#    [ -e scripts/format_binary_url.sh ] && psol_url=$(scripts/format_binary_url.sh PSOL_BINARY_URL)
-#    wget -O- "${psol_url}" | tar -xz
-#
-#    cd_dir "${MODULE_PATH}"
-#    wget -O- http://nginx.org/download/nginx-"${NGINX_VERSION}".tar.gz | tar -xz
-#    wget -O- http://scripts.hostvn.net/ubuntu/ngx_cache_purge-"${ngx_cache_purge_version}".tar.gz | tar -xz
-#    wget -O- http://scripts.hostvn.net/ubuntu/openssl-OpenSSL_"${openssl_version}".tar.gz | tar -xz
-#    wget -O- ftp://ftp.pcre.org/pub/pcre/pcre-"${pcre_version}".tar.gz | tar -xz
-#    wget -O- https://www.zlib.net/zlib-"${zlib_version}".tar.gz | tar -xz
-#    git clone --depth 1 https://github.com/google/ngx_brotli
-#    cd_dir ngx_brotli && git submodule update --init
-#
-#    apt-get install -y git build-essential libpcre3 libpcre3-dev libssl-dev libtool autoconf apache2-dev libxml2-dev \
-#        libcurl4-openssl-dev automake pkgconf
-#    apt-get install bison build-essential ca-certificates curl dh-autoreconf doxygen flex gawk git iputils-ping \
-#        libcurl4-gnutls-dev libexpat1-dev libgeoip-dev liblmdb-dev libpcre3-dev libpcre++-dev libssl-dev libtool \
-#        libxml2 libxml2-dev libyajl-dev locales lua5.3-dev pkg-config wget zlib1g-dev -y
-#    apt autoremove -y
-#
-#    cd_dir "${MODULE_PATH}"
-#    git clone -b nginx_refactoring https://github.com/SpiderLabs/ModSecurity.git
-#    #wget -O- http://scripts.hostvn.net/ubuntu/ModSecurity.tar.gz | tar -xz
-#    cd_dir ModSecurity
-#    ./autogen.sh
-#    ./configure --enable-standalone-module --disable-mlogc
-#    make
-#    cd_dir "${MODULE_PATH}"/nginx-"${NGINX_VERSION}"/
-#    ./configure \
-#        "--user=nginx" \
-#        "--group=nginx" \
-#        "--prefix=/usr" \
-#        "--sbin-path=/usr/sbin" \
-#        "--conf-path=/etc/nginx/nginx.conf" \
-#        "--pid-path=/var/run/nginx.pid" \
-#        "--http-log-path=/var/log/nginx/access_log" \
-#        "--error-log-path=/var/log/nginx/error_log" \
-#        "--without-mail_imap_module" \
-#        "--without-mail_smtp_module" \
-#        "--with-http_ssl_module" \
-#        "--with-http_realip_module" \
-#        "--with-http_stub_status_module" \
-#        "--with-http_gzip_static_module" \
-#        "--with-http_dav_module" \
-#        "--with-http_v2_module" \
-#        "--with-pcre=../pcre-${pcre_version}" \
-#        "--with-pcre-jit" \
-#        "--with-zlib=../zlib-${zlib_version}" \
-#        "--with-openssl=../openssl-OpenSSL_${openssl_version}" \
-#        "--with-openssl-opt=no-nextprotoneg" \
-#        "--add-module=../ngx_cache_purge-${ngx_cache_purge_version}" \
-#        "--add-module=../incubator-pagespeed-ngx-${NPS_VERSION}" \
-#        "--add-module=../ngx_brotli" \
-#        "--add-module=../ModSecurity/nginx/modsecurity" \
-#        "--with-cc-opt='-D FD_SETSIZE=32768'"
-#
-#    make && make install
-#
-#    if [[ -d "/usr/lib/nginx/modules" && ! -d "/etc/nginx/modules" ]]; then
-#        ln -s /usr/lib/nginx/modules /etc/nginx/modules
-#    fi
-#
-#    adduser --system --home /nonexistent --shell /bin/false --no-create-home --disabled-login --disabled-password \
-#        --gecos "nginx user" --group nginx
-#
-#    if [ ! -f "/etc/systemd/system/nginx.service" ]; then
-#        cat >> "/etc/systemd/system/nginx.service" << EOnginx_service
-#[Unit]
-#Description=The nginx HTTP and reverse proxy server
-#After=syslog.target network.target remote-fs.target nss-lookup.target
-#
-#[Service]
-#Type=forking
-#PIDFile=/var/run/nginx.pid
-#ExecStartPre=/usr/sbin/nginx -t -c /etc/nginx/nginx.conf
-#ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx.conf
-#ExecReload=/bin/kill -s HUP \$MAINPID
-#ExecStop=/bin/kill -s QUIT \$MAINPID
-#PrivateTmp=true
-#LimitMEMLOCK=infinity
-#LimitNOFILE=65535
-#
-#[Install]
-#WantedBy=multi-user.target
-#EOnginx_service
-#    fi
-#
-#    sudo systemctl enable nginx.service
-#    sudo systemctl start nginx.service
-#    cd_dir "${DIR}"
-#}
 
 install_nginx(){
     apt-get install build-essential zlib1g-dev libpcre3 libpcre3-dev unzip uuid-dev -y
@@ -498,11 +365,6 @@ install_nginx(){
 
     cd_dir "${MODULE_PATH}"
 
-    # wget -O- https://github.com/apache/incubator-pagespeed-ngx/archive/v"${NPS_VERSION}".tar.gz | tar -xz
-    # nps_dir=$(find . -name "*pagespeed-ngx-${NPS_VERSION}" -type d)
-    # cd_dir "$nps_dir"
-    # NPS_RELEASE_NUMBER=${NPS_VERSION/beta/}
-    # NPS_RELEASE_NUMBER=${NPS_VERSION/stable/}
 
     psol_url=https://dl.google.com/dl/page-speed/psol/${NPS_RELEASE_NUMBER}.tar.gz
     [ -e scripts/format_binary_url.sh ] && psol_url=$(scripts/format_binary_url.sh PSOL_BINARY_URL)
@@ -517,15 +379,6 @@ install_nginx(){
     wget -O- "${MODULES_LINK}"/headers-more-nginx-module-"${more_clear_headers_v}".tar.gz | tar -xz
     wget -O- https://github.com/vozlt/nginx-module-vts/archive/refs/tags/v"${nginx_module_vts_v}".tar.gz | tar -xz
 
-    # git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli
-    # cd_dir ngx_brotli/deps/brotli 
-    # mkdir -p out && cd_dir out
-    # cmake -DCMAKE_BUILD_TYPE=Release \
-    #     -DBUILD_SHARED_LIBS=OFF \
-    #     -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-    #     -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-    #     -DCMAKE_INSTALL_PREFIX=./installed ..
-    # cmake --build . --config Release --target brotlienc
 
     cd_dir "${MODULE_PATH}"/nginx-"${NGINX_VERSION}"/
     export CFLAGS="-m64 -march=native -mtune=native -Ofast -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections"
@@ -618,21 +471,7 @@ EOnginx_service
 
 install_mariadb() {
     apt-get install software-properties-common apt-transport-https -y
-#    sudo apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc' << EOF
-#
-#EOF
-#
-#    OS_VER=$(grep -oP '(?<=^VERSION_ID=).+' /etc/os-release | tr -d '"')
-#    if [ "${OS_VER}" == "18.04" ]; then
-#        sudo add-apt-repository "deb [arch=amd64,arm64,ppc64el] http://sgp1.mirrors.digitalocean.com/mariadb/repo/${MARIADB_VERSION}/ubuntu bionic main"
-#    elif [ "${OS_VER}" == "20.04" ]; then
-#        sudo add-apt-repository "deb [arch=amd64,arm64,ppc64el] http://sgp1.mirrors.digitalocean.com/mariadb/repo/${MARIADB_VERSION}/ubuntu focal main"
-#    else
-#        clear
-#        printf "%s" "${RED}VPS cua ban khong the ket noi toi server cua MaraiDB. Vui long kiem tra lai Network cua VPS${NC}"
-#        printf "%s" "${RED}Huy cai dat.${NC}"
-#        exit
-#    fi
+
     curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
     sudo apt update
     sudo apt install mariadb-server -y
@@ -1686,52 +1525,6 @@ create_extra_conf() {
         mkdir -p /etc/nginx/extra
     fi
 
-#     cat >> "/etc/nginx/extra/brotli.conf" << EOFBRCONF
-# ##Brotli Compression
-# brotli on;
-# brotli_static on;
-# brotli_buffers 16 8k;
-# brotli_comp_level 5;
-# brotli_types
-#     application/atom+xml
-#     application/geo+json
-#     application/javascript
-#     application/json
-#     application/ld+json
-#     application/manifest+json
-#     application/rdf+xml
-#     application/rss+xml
-#     application/vnd.ms-fontobject
-#     application/wasm
-#     application/x-font-opentype
-#     application/x-font-truetype
-#     application/x-font-ttf
-#     application/x-javascript
-#     application/x-web-app-manifest+json
-#     application/xhtml+xml
-#     application/xml
-#     application/xml+rss
-#     font/eot
-#     font/opentype
-#     font/otf
-#     image/bmp
-#     image/svg+xml
-#     image/vnd.microsoft.icon
-#     image/x-icon
-#     image/x-win-bitmap
-#     text/cache-manifest
-#     text/calendar
-#     text/css
-#     text/javascript
-#     text/markdown
-#     text/plain
-#     text/vcard
-#     text/vnd.rim.location.xloc
-#     text/vtt
-#     text/x-component
-#     text/x-cross-domain-policy
-#     text/xml;
-# EOFBRCONF
 
     cat >> "/etc/nginx/extra/nginx_cache.conf" << EOnginx_cache
 fastcgi_cache_key "\$scheme\$request_method\$host\$request_uri";
@@ -1895,29 +1688,7 @@ EOcf_ipv6
         rm -rf updateCf
     fi
 
-#    cat >>"/etc/nginx/extra/cloudflare.conf" <<EOCF
-#real_ip_header X-Forwarded-For;
-#set_real_ip_from 173.245.48.0/20
-#set_real_ip_from 103.21.244.0/22
-#set_real_ip_from 103.22.200.0/22
-#set_real_ip_from 103.31.4.0/22
-#set_real_ip_from 141.101.64.0/18
-#set_real_ip_from 108.162.192.0/18
-#set_real_ip_from 190.93.240.0/20
-#set_real_ip_from 188.114.96.0/20
-#set_real_ip_from 197.234.240.0/22
-#set_real_ip_from 198.41.128.0/17
-#set_real_ip_from 162.158.0.0/15
-#set_real_ip_from 104.16.0.0/12
-#set_real_ip_from 172.64.0.0/13
-#set_real_ip_from 131.0.72.0/22
-#set_real_ip_from 2400:cb00::/32
-#set_real_ip_from 2606:4700::/32
-#set_real_ip_from 2803:f800::/32
-#set_real_ip_from 2405:b500::/32
-#set_real_ip_from 2405:8100::/32
-#set_real_ip_from 2a06:98c0::/29
-#EOCF
+
 
     cat >>"/etc/nginx/extra/nginx_limits.conf" <<EOCF
 fastcgi_connect_timeout 60;
@@ -2949,10 +2720,7 @@ install_wp_cli_packages() {
     echo "memory_limit = ${MAX_MEMORY}M" >>"$PHP1_INI_PATH"/00-hostvn-custom.ini
     echo "memory_limit = ${MAX_MEMORY}M" >>"$PHP1_CLI_PATH"/00-hostvn-custom.ini
 
-#    echo "allow_url_fopen = Off" >> "$PHP2_INI_PATH"/00-hostvn-custom.ini
-#    echo "allow_url_fopen = Off" >> "$PHP2_CLI_PATH"/00-hostvn-custom.ini
-#    echo "allow_url_fopen = Off" >> "$PHP1_INI_PATH"/00-hostvn-custom.ini
-#    echo "allow_url_fopen = Off" >> "$PHP1_CLI_PATH"/00-hostvn-custom.ini
+
 
     systemctl restart php"${PHP_VERSION}"-fpm
 }
@@ -3468,7 +3236,7 @@ END
 ############################################
 add_menu() {
     cd_dir "${BASH_DIR}"
-    rm -rf menu tinycp.conf ipaddress menu-ubuntu.tar.gz /usr/bin/hostvn
+    rm -rf menu tinycp.conf ipaddress menu-ubuntu.tar.gz menu-ubuntu-vip.tar.gz /usr/bin/tiny
     if [[ "$MENU_FILE_SELECTED" == "menu-ubuntu-vip.tar.gz" ]]; then
         curl -4 -s -L -o menu-ubuntu-vip.tar.gz "${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}" > /dev/null
         tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null
@@ -3892,7 +3660,7 @@ echo "                         📝 THÔNG TIN TRUY CẬP"
 echo "========================================================================="
 echo ""
 echo "🔧 MENU QUẢN LÝ:"
-echo "   ${RED}→ Sử dụng lệnh: hostvn${NC}"
+echo "   ${RED}→ Sử dụng lệnh: tiny${NC}"
 echo ""
 echo "🔐 THÔNG TIN ĐĂNG NHẬP:"
 echo "   • SSH Port                             : ${SSH_PORT}"
