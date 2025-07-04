@@ -3255,11 +3255,11 @@ add_menu() {
     fi
     _cd_dir ${BASH_DIR}
     mkdir -p "${BASH_DIR}"/{users,wpcron} /var/log/hostvn
-    chmod 711 menu users wpcron
-    find ./menu -type f -exec chmod +x {} \; 2>/dev/null
-    find ./menu -type f -exec dos2unix {} \; 2>/dev/null
+    chmod 711 menu users wpcron || exit 1
+    find ./menu -type f -exec chmod +x {} \; 2>/dev/null || exit 1
+    find ./menu -type f -exec dos2unix {} \; 2>/dev/null || exit 1
 
-    mv "${BASH_DIR}"/menu/tiny /usr/bin/tiny && chmod +x /usr/bin/tiny
+    mv "${BASH_DIR}"/menu/tiny /usr/bin/tiny && chmod +x /usr/bin/tiny || exit 1
 }
 
 ############################################
