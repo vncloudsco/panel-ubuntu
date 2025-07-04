@@ -113,8 +113,9 @@ valid_ip() {
 # Check if a string is a valid JWT
 is_valid_jwt() {
     local jwt="$1"
+    echo "Checking JWT: $jwt"
     # JWT must have 3 parts separated by 2 dots
-    if [[ "$jwt" =~ ^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$ ]]; then
+    if [[ "$jwt" =~ ^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$ ]]; then
         return 0
     else
         return 1
