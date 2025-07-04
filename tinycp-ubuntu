@@ -120,7 +120,6 @@ is_valid_jwt() {
     else
         return 1
     fi
-    export JWT_KEY="$1"
 }
 
 # Download VIP menu file using JWT
