@@ -142,7 +142,6 @@ get_vip_menu() {
         echo "Tai menu VIP that bai. He thong se chuyen ve ban FREE."
         return 1
     fi
-    export JWT_KEY="$1"
 }
 
 # Hoi nguoi dung chon Free hay VIP, xu ly tai menu phu hop
@@ -183,6 +182,7 @@ choose_menu_version() {
         esac
     done
     export MENU_FILE_SELECTED="$menu_file"
+    export JWT_KEY="$jwt_key"
 }
 
 ############################################
