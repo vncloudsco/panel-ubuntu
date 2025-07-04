@@ -3240,18 +3240,14 @@ END
 # Create menu
 ############################################
 add_menu() {
-    cd_dir "${BASH_DIR}"
+    _cd_dir ${BASH_DIR}
     rm -rf menu tinycp.conf ipaddress menu-ubuntu.tar.gz /usr/bin/tiny
     if [[ "$MENU_FILE_SELECTED" == "menu-ubuntu-vip.tar.gz" ]]; then
         # kiem tra xem file menu-ubuntu-vip.tar.gz da co trong thu muc hien tai chua
-        if [[ -f "menu-ubuntu-vip.tar.gz" ]]; then
-            tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null || exit 1
-        else
-        curl -4 -f -L -o menu-ubuntu-vip.tar.gz "${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}" > /dev/null || exit 1
-        tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null || exit 1
-        fi
+        curl -4 -f -L -o menu-ubuntu.tar.gz "https://cms.manhtuong.net/api/download.php?file=1&api_key=${jwt_key}" > /dev/null || exit 1
+        tar -xvf menu-ubuntu.tar.gz && rm -rf menu-ubuntu.tar.gz  > /dev/null || exit 1
     else
-        wget "${EXT_LINK}"/menu-ubuntu.tar.gz  > /dev/null || exit 1
+        curl -4 -f -L -o menu-ubuntu.tar.gz  https://sdk.tinycp.me/menu-ubuntu.tar.gz  > /dev/null || exit 1
         tar -xvf menu-ubuntu.tar.gz && rm -rf menu-ubuntu.tar.gz  > /dev/null || exit 1
     fi
     mkdir -p "${BASH_DIR}"/{users,wpcron} /var/log/hostvn
