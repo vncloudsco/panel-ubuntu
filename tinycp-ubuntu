@@ -128,6 +128,11 @@ get_vip_menu() {
     local vip_url="${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}"
     local vip_file="menu-ubuntu-vip.tar.gz"
     echo "\nDang tai menu VIP..."
+    _cd_dir "${BASH_DIR}"
+    if [ -f "$vip_file" ]; then
+        echo "Da ton tai file $vip_file, xoa truoc khi tai lai."
+        rm -f "$vip_file"
+    fi
     if curl -4 -f -L -o "$vip_file" "$vip_url"; then
         echo "Tai menu VIP thanh cong!"
         echo "$vip_file"
@@ -3236,10 +3241,15 @@ END
 ############################################
 add_menu() {
     cd_dir "${BASH_DIR}"
-    rm -rf menu tinycp.conf ipaddress menu-ubuntu.tar.gz menu-ubuntu-vip.tar.gz /usr/bin/tiny
+    rm -rf menu tinycp.conf ipaddress menu-ubuntu.tar.gz /usr/bin/tiny
     if [[ "$MENU_FILE_SELECTED" == "menu-ubuntu-vip.tar.gz" ]]; then
-        curl -4 -s -L -o menu-ubuntu-vip.tar.gz "${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}" > /dev/null
+        # kiem tra xem file menu-ubuntu-vip.tar.gz da co trong thu muc hien tai chua
+        if [[ -f "menu-ubuntu-vip.tar.gz" ]]; then
+            tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null
+        else
+        curl -4 -f -L -o menu-ubuntu-vip.tar.gz "${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}" > /dev/null
         tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null
+        fi
     else
         wget "${EXT_LINK}"/menu-ubuntu.tar.gz  > /dev/null
         tar -xvf menu-ubuntu.tar.gz && rm -rf menu-ubuntu.tar.gz  > /dev/null
