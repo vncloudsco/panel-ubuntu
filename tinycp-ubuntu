@@ -36,8 +36,8 @@ HOSTNAME=$(hostname)
 PHP2_RELEASE="no"
 
 # Copyright
-AUTHOR="TinyActive.com"
-AUTHOR_CONTACT="https://github.com/TinyActive"
+AUTHOR="tinycp.me"
+AUTHOR_CONTACT="contact@manhtuong.net"
 
 # Service Version
 PHPMYADMIN_VERSION=$(curl -s ${UPDATE_LINK}/version | grep "phpmyadmin_version=" | cut -f2 -d'=')
@@ -57,8 +57,8 @@ INVALID_PHP2_OPTION="${RED}Lua chon cua ban khong chinh xac. Vui long chon lai.$
 SELECT_PHP_2="Lua chon phien ban PHP thu hai ban muon su dung:"
 LOGIN_NOTI1="Cam on ban da su dung dich vu cua ${AUTHOR}."
 LOGIN_NOTI2="Neu can ho tro vui long truy cap ${AUTHOR_CONTACT}"
-LOGIN_NOTI3="Truoc khi dat cau hoi vui long xem Document: https://doc.hostvn.vn/"
-LOGIN_NOTI4="De mo menu ban go lenh sau:  hostvn"
+LOGIN_NOTI3="Truoc khi dat cau hoi vui long xem wiki: https://github.com/TinyActive/panel/wiki"
+LOGIN_NOTI4="De mo menu ban go lenh sau:  tiny"
 
 # Random Port
 RANDOM_ADMIN_PORT=$(shuf -i 49152-57343 -n 1)
@@ -3470,7 +3470,7 @@ add_menu() {
     cd_dir "${BASH_DIR}"
     rm -rf menu tinycp.conf ipaddress menu-ubuntu.tar.gz /usr/bin/hostvn
     if [[ "$MENU_FILE_SELECTED" == "menu-ubuntu-vip.tar.gz" ]]; then
-        wget -4 -O menu-ubuntu-vip.tar.gz "${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}"   > /dev/null
+        curl -4 -s -L -o menu-ubuntu-vip.tar.gz "${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}" > /dev/null
         tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null
     else
         wget "${EXT_LINK}"/menu-ubuntu.tar.gz  > /dev/null
