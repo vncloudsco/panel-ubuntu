@@ -22,6 +22,8 @@ DIR=$(pwd)
 RED='\033[0;31m'
 NC='\033[0m'
 
+VIP_EXT_LINK="https://cms.manhtuong.net"
+
 SCRIPTS_VERSION="0.1.0"
 IPADDRESS=$(curl -s https://ifconfig.me/ip)
 DIR=$(pwd)
@@ -106,6 +108,73 @@ valid_ip() {
     else
         return 1
     fi
+}
+# =========================
+# Check if a string is a valid JWT
+is_valid_jwt() {
+    local jwt="$1"
+    # JWT must have 3 parts separated by 2 dots
+    if [[ "$jwt" =~ ^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Download VIP menu file using JWT
+get_vip_menu() {
+    local jwt_key="$1"
+    local vip_url="${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}"
+    local vip_file="menu-ubuntu-vip.tar.gz"
+    echo "\nDang tai menu VIP..."
+    if curl -4 -f -L -o "$vip_file" "$vip_url"; then
+        echo "Tai menu VIP thanh cong!"
+        echo "$vip_file"
+        return 0
+    else
+        echo "Tai menu VIP that bai. He thong se chuyen ve ban FREE."
+        return 1
+    fi
+}
+
+# Hoi nguoi dung chon Free hay VIP, xu ly tai menu phu hop
+choose_menu_version() {
+    echo "==============================="
+    echo "Chon phien ban menu de cai dat:"
+    echo "1) FREE (Mien phi)"
+    echo "2) VIP (Nhap ma JWT)"
+    echo "==============================="
+    local menu_type menu_file jwt_key
+    while true; do
+        read -rp "Nhap lua chon [1-2]: " menu_type
+        case $menu_type in
+            1)
+                menu_file="menu-ubuntu.tar.gz"
+                break
+                ;;
+            2)
+                while true; do
+                    read -rp "Nhap ma JWT (API key): " jwt_key
+                    if is_valid_jwt "$jwt_key"; then
+                        if get_vip_menu "$jwt_key"; then
+                            menu_file="menu-ubuntu-vip.tar.gz"
+                            break 2
+                        else
+                            echo "Chuyen ve ban FREE..."
+                            menu_file="menu-ubuntu.tar.gz"
+                            break 2
+                        fi
+                    else
+                        echo "Ma JWT khong hop le. Vui long nhap lai."
+                    fi
+                done
+                ;;
+            *)
+                echo "Lua chon khong hop le. Vui long chon 1 hoac 2."
+                ;;
+        esac
+    done
+    export MENU_FILE_SELECTED="$menu_file"
 }
 
 ############################################
@@ -3399,16 +3468,18 @@ END
 add_menu() {
     cd_dir "${BASH_DIR}"
     rm -rf menu tinycp.conf ipaddress menu-ubuntu.tar.gz /usr/bin/hostvn
-    wget "${EXT_LINK}"/menu-ubuntu.tar.gz  > /dev/null
-    tar -xvf menu-ubuntu.tar.gz && rm -rf menu-ubuntu.tar.gz  > /dev/null
-    mkdir -p "${BASH_DIR}"/users
-    mkdir -p /var/log/hostvn
-    mkdir -p /var/tinycp/wpcron
+    if [[ "$MENU_FILE_SELECTED" == "menu-ubuntu-vip.tar.gz" ]]; then
+        wget -4 -O menu-ubuntu-vip.tar.gz "${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}"   > /dev/null
+        tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null
+    else
+        wget "${EXT_LINK}"/menu-ubuntu.tar.gz  > /dev/null
+        tar -xvf menu-ubuntu.tar.gz && rm -rf menu-ubuntu.tar.gz  > /dev/null
+    fi
+    mkdir -p "${BASH_DIR}"/{users,wpcron} /var/log/hostvn
     chmod 711 menu users wpcron
-    chmod +x ./menu/* ./menu/*/* ./menu/*/*/* ./menu/*/*/*/* > /dev/null
-    dos2unix ./menu/* > /dev/null
-    dos2unix ./menu/*/* > /dev/null
-    dos2unix ./menu/*/*/* > /dev/null
+    find ./menu -type f -exec chmod +x {} \; 2>/dev/null
+    find ./menu -type f -exec dos2unix {} \; 2>/dev/null
+
 
     mv "${BASH_DIR}"/menu/tiny /usr/bin/tiny && chmod +x /usr/bin/tiny
 }
@@ -3731,6 +3802,7 @@ EOsysctl
 
 create_bash_dir
 set_email
+choose_menu_version
 ssh_login_notify
 input_ip
 option_change_ssh_port
