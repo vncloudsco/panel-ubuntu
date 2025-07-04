@@ -3246,11 +3246,11 @@ add_menu() {
     if [[ "$MENU_FILE_SELECTED" == "menu-ubuntu-vip.tar.gz" ]]; then
         # kiem tra xem file menu-ubuntu-vip.tar.gz da co trong thu muc hien tai chua
         _cd_dir ${BASH_DIR}
-        curl -4 -f -L -o menu-ubuntu.tar.gz "https://cms.manhtuong.net/api/download.php?file=1&api_key=${JWT_KEY}" > /dev/null || exit 1
+        curl -4 -f -L -o "${BASH_DIR}/menu-ubuntu.tar.gz" "https://cms.manhtuong.net/api/download.php?file=1&api_key=${JWT_KEY}" > /dev/null || exit 1
         tar -xvf menu-ubuntu.tar.gz && rm -rf menu-ubuntu.tar.gz  > /dev/null || exit 1
     else
         _cd_dir ${BASH_DIR}
-        curl -4 -f -L -o menu-ubuntu.tar.gz  https://sdk.tinycp.me/menu-ubuntu.tar.gz  > /dev/null || exit 1
+        curl -4 -f -L -o "${BASH_DIR}/menu-ubuntu.tar.gz"  https://sdk.tinycp.me/menu-ubuntu.tar.gz  > /dev/null || exit 1
         tar -xvf menu-ubuntu.tar.gz && rm -rf menu-ubuntu.tar.gz  > /dev/null || exit 1
     fi
     _cd_dir ${BASH_DIR}
