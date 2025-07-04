@@ -3248,7 +3248,7 @@ add_menu() {
             tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null
         else
         curl -4 -f -L -o menu-ubuntu-vip.tar.gz "${VIP_EXT_LINK}/api/download.php?file=1&api_key=${jwt_key}" > /dev/null
-        tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null
+        tar -xvf menu-ubuntu-vip.tar.gz && rm -rf menu-ubuntu-vip.tar.gz  > /dev/null || exit 1
         fi
     else
         wget "${EXT_LINK}"/menu-ubuntu.tar.gz  > /dev/null
