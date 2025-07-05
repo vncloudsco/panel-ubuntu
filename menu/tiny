@@ -27,7 +27,7 @@ CHOICE=1
 printf "\n"
 printf "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}\n"
 printf "${GREEN}│${NC}  %-$(($BOX_WIDTH-1))s${GREEN}│${NC}\n" "TinyActive Scripts - VPS Manager"
-printf "${GREEN}│${NC}  %-$(($BOX_WIDTH-1))s${GREEN}│${NC}\n" "tinycp.net - Version ${script_version}"
+printf "${GREEN}│${NC}  %-$(($BOX_WIDTH-1))s${GREEN}│${NC}\n" "Tinycp.me - Version ${script_version}"
 printf "${GREEN}├──────────────────────────────────────────────────────────────┤${NC}\n"
 printf "${GREEN}│${NC}  VPS IP        : %-$(($BOX_WIDTH-17))s${GREEN}│${NC}\n" "${IPADDRESS}"
 printf "${RED}│${NC}  phpMyAdmin    : %-$(($BOX_WIDTH-17))s${RED}│${NC}\n" "http://${IPADDRESS}:${admin_port}/phpmyadmin"
