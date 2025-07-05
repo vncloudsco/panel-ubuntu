@@ -1,0 +1,16 @@
+#!/bin/bash
+
+ssl_cron_exists=$(crontab -l | grep -w 'acme.sh')
+if [ -n "${ssl_cron_exists}" ]; then
+    crontab -u root -l | grep -v "acme.sh" | crontab -u root -
+fi
+
+ssl_cron_exists=$(crontab -l | grep -w 'acme.sh')
+if [ -z "${ssl_cron_exists}" ]; then
+    crontab -l >auto_ssl
+    echo '0 0 * * * "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" >/dev/null 2>&1' >> auto_ssl
+    crontab auto_ssl
+    rm -rf auto_ssl
+fi
+clear
+menu_cronjob

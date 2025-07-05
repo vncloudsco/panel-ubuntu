@@ -450,7 +450,9 @@ menu_cronjob(){
 cron_backup_local(){
     . /var/tinycp/menu/controller/cronjob/backup_local
 }
-
+cronjob_ssl_renew(){
+    . /var/tinycp/menu/controller/cronjob/cronjob_ssl_renew
+}
 cron_backup_google(){
     . /var/tinycp/menu/controller/cronjob/backup_google
 }

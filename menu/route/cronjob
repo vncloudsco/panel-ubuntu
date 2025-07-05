@@ -25,6 +25,7 @@ do
     printf "%s5. Cronjob backup to Telegram%s\n" "${GREEN}" "${NC}"
     printf "%s6. ${lang_custom_cronjob}%s\n" "${GREEN}" "${NC}"
     printf "%s7. Delete cronjob%s\n" "${GREEN}" "${NC}"
+    printf "%s8. Cronjob SSL Renew%s\n" "${GREEN}" "${NC}"
     printf "%s=============================================%s\n" "${GREEN}" "${NC}"
     read -r -p " ${SELECT_OPTION} " CHOICE
     if [ -z "${CHOICE}" ]
@@ -52,6 +53,7 @@ do
             menu_cronjob
             ;;
         7) clear; cron_destroy ;;
+        8) clear; cronjob_ssl_renew ;;
         0) clear; menu_primary ;;
         *) clear; printf "%s\n" "${RED}${WRONG_OPTION}${NC}";;
     esac
