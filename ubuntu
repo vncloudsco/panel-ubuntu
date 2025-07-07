@@ -58,7 +58,7 @@ remove_old_service(){
     apt-get clean all
     
     # Remove configuration entries in a single sed command for each file
-    sed -i '/HOSTVN.VN\|hostvn/d' "$HOME/.bashrc"
+    sed -i '/TinyPanel\|tinycp/d' "$HOME/.bashrc"
     sed -i '/filetransfer\|Prevent user access\|Disable X11\|Disable tunneling\|Disable port forwarding\|Disable network tunneling\|Force the connection/d' /etc/ssh/sshd_config
     
     # Remove local script file if exists
