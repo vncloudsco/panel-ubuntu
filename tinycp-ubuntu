@@ -3260,7 +3260,7 @@ add_menu() {
         tar -xvf ${VIP_FILE_NAME} && rm -rf ${VIP_FILE_NAME}  > /dev/null || exit 1
     else
         cd ${BASH_DIR}
-        curl -4 -f -L -o ${VIP_FILE_NAME_FREE}  "https://sdk.tinycp.me/${VIP_FILE_NAME_FREE}"  > /dev/null || exit 1
+        curl -4 -f -L -o ${VIP_FILE_NAME_FREE}  "${HOME_PAGE}/${VIP_FILE_NAME_FREE}"  > /dev/null || exit 1
         tar -xvf ${VIP_FILE_NAME_FREE} && rm -rf ${VIP_FILE_NAME_FREE}  > /dev/null || exit 1
     fi
     cd ${BASH_DIR}
