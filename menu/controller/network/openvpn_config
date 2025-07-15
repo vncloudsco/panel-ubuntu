@@ -1,0 +1,339 @@
+#!/bin/bash
+
+######################################################################
+#           Auto Install & Optimize LEMP Stack on Ubuntu             #
+#                                                                    #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
+#                                                                    #
+#              Please do not remove copyright. Thank!                #
+#  Please do not copy under any circumstance for commercial reason!  #
+######################################################################
+
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/menu/lang/"${lang}"
+
+CHOICE=1
+
+printf "\n"
+printf "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}\n"
+printf "${GREEN}│${NC}  %-59s${GREEN}│${NC}\n" "${lang_network_openvpn_config}"
+printf "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}\n"
+
+# Check if OpenVPN is installed
+check_openvpn_status() {
+    if [[ -e /etc/openvpn/server/server.conf ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Get list of existing clients
+get_client_list() {
+    if [[ -d /etc/openvpn/server/easy-rsa/pki/issued ]]; then
+        ls /etc/openvpn/server/easy-rsa/pki/issued/*.crt 2>/dev/null | sed 's|.*/||g' | sed 's|\.crt||g' | grep -v "server"
+    fi
+}
+
+# Create new client
+create_new_client() {
+    if ! check_openvpn_status; then
+        printf "\n${RED}${lang_openvpn_not_installed}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n"
+    read -r -p "${GREEN}Enter client name (alphanumeric characters only):${NC} " client_name
+    
+    # Validate client name
+    if [[ -z "${client_name}" ]]; then
+        printf "\n${RED}Client name cannot be empty${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    # Clean client name
+    client_name=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "${client_name}")
+    
+    # Check if client already exists
+    if [[ -f "/etc/openvpn/server/easy-rsa/pki/issued/${client_name}.crt" ]]; then
+        printf "\n${RED}Client '${client_name}' already exists${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}Creating client certificate for '${client_name}'...${NC}\n"
+    
+    cd /etc/openvpn/server/easy-rsa/
+    
+    # Generate client certificate
+    ./easyrsa --batch --days=3650 build-client-full "${client_name}" nopass
+    
+    if [[ $? -eq 0 ]]; then
+        # Generate client configuration
+        generate_client_config "${client_name}"
+        printf "\n${GREEN}${lang_openvpn_config_created}${NC}\n"
+        printf "${YELLOW}Client configuration saved to: /var/tinycp/openvpn_configs/${client_name}.ovpn${NC}\n"
+    else
+        printf "\n${RED}Failed to create client certificate${NC}\n"
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+# Generate client configuration file
+generate_client_config() {
+    local client_name="$1"
+    
+    # Get server details
+    local server_ip=$(grep "^remote " /etc/openvpn/server/client-common.txt | awk '{print $2}' 2>/dev/null)
+    if [[ -z "${server_ip}" ]]; then
+        server_ip=$(curl -4 ifconfig.co 2>/dev/null || curl -4 icanhazip.com 2>/dev/null || curl -4 ipinfo.io/ip 2>/dev/null)
+    fi
+    
+    local server_port=$(grep "^remote " /etc/openvpn/server/client-common.txt | awk '{print $3}' 2>/dev/null || echo "1194")
+    local protocol=$(grep "^proto " /etc/openvpn/server/server.conf | awk '{print $2}' 2>/dev/null || echo "udp")
+    
+    # Create config directory
+    mkdir -p /var/tinycp/openvpn_configs
+    
+    # Create client config file
+    cat > "/var/tinycp/openvpn_configs/${client_name}.ovpn" << EOF
+client
+dev tun
+proto ${protocol}
+remote ${server_ip} ${server_port}
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+auth SHA512
+verb 3
+# TinyCP Generated Configuration for ${client_name}
+# Generated on $(date)
+
+<ca>
+$(cat /etc/openvpn/server/ca.crt)
+</ca>
+
+<cert>
+$(cat /etc/openvpn/server/easy-rsa/pki/issued/${client_name}.crt)
+</cert>
+
+<key>
+$(cat /etc/openvpn/server/easy-rsa/pki/private/${client_name}.key)
+</key>
+
+<tls-crypt>
+$(cat /etc/openvpn/server/tc.key)
+</tls-crypt>
+EOF
+    
+    # Set proper permissions
+    chmod 600 "/var/tinycp/openvpn_configs/${client_name}.ovpn"
+}
+
+# Revoke client
+revoke_client() {
+    if ! check_openvpn_status; then
+        printf "\n${RED}${lang_openvpn_not_installed}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    local clients=($(get_client_list))
+    
+    if [[ ${#clients[@]} -eq 0 ]]; then
+        printf "\n${YELLOW}No clients found${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}Existing clients:${NC}\n"
+    printf "${GREEN}=================${NC}\n"
+    
+    local i=1
+    for client in "${clients[@]}"; do
+        printf "${GREEN}[${i}]${NC} ${client}\n"
+        ((i++))
+    done
+    
+    printf "\n"
+    read -r -p "${GREEN}Select client to revoke [1-${#clients[@]}]:${NC} " selected
+    
+    if [[ "${selected}" =~ ^[0-9]+$ ]] && [[ "${selected}" -ge 1 ]] && [[ "${selected}" -le ${#clients[@]} ]]; then
+        local client_name="${clients[$((selected-1))]}"
+        
+        printf "\n${RED}Are you sure you want to revoke client '${client_name}'? [y/N]:${NC} "
+        read -r confirm
+        
+        if [[ "${confirm}" =~ ^[Yy]$ ]]; then
+            printf "\n${GREEN}Revoking client '${client_name}'...${NC}\n"
+            
+            cd /etc/openvpn/server/easy-rsa/
+            ./easyrsa --batch revoke "${client_name}"
+            ./easyrsa --batch gen-crl
+            
+            # Update CRL
+            cp pki/crl.pem /etc/openvpn/server/crl.pem
+            chown nobody:nogroup /etc/openvpn/server/crl.pem
+            
+            # Remove client config file
+            rm -f "/var/tinycp/openvpn_configs/${client_name}.ovpn"
+            
+            printf "\n${GREEN}Client '${client_name}' has been revoked${NC}\n"
+        fi
+    else
+        printf "\n${RED}${WRONG_SELECT}${NC}\n"
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+# Download client config
+download_client_config() {
+    if ! check_openvpn_status; then
+        printf "\n${RED}${lang_openvpn_not_installed}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    # List available config files
+    local configs=()
+    if [[ -d /var/tinycp/openvpn_configs ]]; then
+        for file in /var/tinycp/openvpn_configs/*.ovpn; do
+            if [[ -f "${file}" ]]; then
+                configs+=($(basename "${file}" .ovpn))
+            fi
+        done
+    fi
+    
+    if [[ ${#configs[@]} -eq 0 ]]; then
+        printf "\n${YELLOW}No client configurations found${NC}\n"
+        printf "${GREEN}Create a new client first${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}Available client configurations:${NC}\n"
+    printf "${GREEN}===============================${NC}\n"
+    
+    local i=1
+    for config in "${configs[@]}"; do
+        local file_size=$(du -h "/var/tinycp/openvpn_configs/${config}.ovpn" | awk '{print $1}')
+        printf "${GREEN}[${i}]${NC} ${config} (${file_size})\n"
+        ((i++))
+    done
+    
+    printf "\n"
+    read -r -p "${GREEN}Select configuration to display [1-${#configs[@]}]:${NC} " selected
+    
+    if [[ "${selected}" =~ ^[0-9]+$ ]] && [[ "${selected}" -ge 1 ]] && [[ "${selected}" -le ${#configs[@]} ]]; then
+        local config_name="${configs[$((selected-1))]}"
+        local config_file="/var/tinycp/openvpn_configs/${config_name}.ovpn"
+        
+        printf "\n${GREEN}Configuration file for '${config_name}':${NC}\n"
+        printf "${GREEN}======================================${NC}\n"
+        printf "${YELLOW}File location: ${config_file}${NC}\n"
+        printf "${YELLOW}Download this file to your OpenVPN client${NC}\n\n"
+        
+        printf "${GREEN}Content preview (first 20 lines):${NC}\n"
+        printf "${GREEN}==================================${NC}\n"
+        head -20 "${config_file}"
+        printf "\n${GREEN}... (truncated)${NC}\n"
+        
+        printf "\n${GREEN}Instructions:${NC}\n"
+        printf "${GREEN}=============${NC}\n"
+        printf "1. Copy the file content or download the file\n"
+        printf "2. Save it with .ovpn extension on your client device\n"
+        printf "3. Import it into your OpenVPN client application\n"
+        printf "4. Connect using the imported configuration\n"
+        
+    else
+        printf "\n${RED}${WRONG_SELECT}${NC}\n"
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+# List all clients and their status
+list_clients() {
+    if ! check_openvpn_status; then
+        printf "\n${RED}${lang_openvpn_not_installed}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}OpenVPN Clients Status:${NC}\n"
+    printf "${GREEN}======================${NC}\n"
+    
+    local clients=($(get_client_list))
+    
+    if [[ ${#clients[@]} -eq 0 ]]; then
+        printf "\n${YELLOW}No clients found${NC}\n"
+    else
+        for client in "${clients[@]}"; do
+            local cert_file="/etc/openvpn/server/easy-rsa/pki/issued/${client}.crt"
+            local config_file="/var/tinycp/openvpn_configs/${client}.ovpn"
+            
+            if [[ -f "${cert_file}" ]]; then
+                # Check if certificate is valid
+                local cert_status=$(openssl x509 -in "${cert_file}" -noout -checkend 0 2>/dev/null && echo "Valid" || echo "Expired")
+                local expiry_date=$(openssl x509 -in "${cert_file}" -noout -enddate 2>/dev/null | cut -d= -f2)
+                
+                printf "${GREEN}Client:${NC} ${client}\n"
+                printf "  ${GREEN}Status:${NC} ${cert_status}\n"
+                printf "  ${GREEN}Expires:${NC} ${expiry_date}\n"
+                
+                if [[ -f "${config_file}" ]]; then
+                    printf "  ${GREEN}Config:${NC} Available (/var/tinycp/openvpn_configs/${client}.ovpn)\n"
+                else
+                    printf "  ${YELLOW}Config:${NC} Not generated\n"
+                fi
+                printf "\n"
+            fi
+        done
+    fi
+    
+    # Show server status
+    printf "${GREEN}OpenVPN Server Status:${NC}\n"
+    printf "${GREEN}=====================${NC}\n"
+    systemctl status openvpn-server@server.service --no-pager -l
+    
+    printf "\n"
+    read -r -p "Press any key to continue..." 
+}
+
+while [ "${CHOICE}" != "0" ]
+do
+    printf "\n"
+    printf "${GREEN}┌─────────────────────── OPTIONS ─────────────────────┐${NC}\n"
+    printf "${GREEN}│${NC}  [1] ⟹  Create new client configuration           ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [2] ⟹  Download/View client configuration        ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [3] ⟹  Revoke client access                      ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [4] ⟹  List all clients and status               ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [0] ⟹  ${lang_cancel_action}                            ${GREEN}│${NC}\n"
+    printf "${GREEN}└──────────────────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n"
+    read -r -p " ${GREEN}${SELECT_OPTION}${NC} " CHOICE
+    
+    if [ -z "${CHOICE}" ]
+    then
+        CHOICE=1
+        continue
+    fi
+    
+    case ${CHOICE} in
+        1) clear; create_new_client;;
+        2) clear; download_client_config;;
+        3) clear; revoke_client;;
+        4) clear; list_clients;;
+        0) clear; menu_network;;
+        *) clear; printf "%s\n" "${WRONG_OPTION}";;
+    esac
+done

@@ -1,0 +1,201 @@
+#!/bin/bash
+
+######################################################################
+#           Auto Install & Optimize LEMP Stack on Ubuntu             #
+#                                                                    #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
+#                                                                    #
+#              Please do not remove copyright. Thank!                #
+#  Please do not copy under any circumstance for commercial reason!  #
+######################################################################
+
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/menu/lang/"${lang}"
+
+CHOICE=1
+
+printf "\n"
+printf "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}\n"
+printf "${GREEN}│${NC}  %-59s${GREEN}│${NC}\n" "${lang_network_ssh_access}"
+printf "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}\n"
+
+# Check if OpenVPN is installed
+check_openvpn_status() {
+    if [[ -e /etc/openvpn/server/server.conf ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check if SSH is restricted
+check_ssh_restriction() {
+    if [[ -f /var/tinycp/ssh_restricted ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Get OpenVPN subnet
+get_openvpn_subnet() {
+    if [[ -f /var/tinycp/openvpn_subnet ]]; then
+        cat /var/tinycp/openvpn_subnet
+    else
+        # Try to get from server.conf
+        if [[ -e /etc/openvpn/server/server.conf ]]; then
+            OVPN_SUBNET=$(grep "server " /etc/openvpn/server/server.conf | awk '{print $2}' | cut -d. -f1-3)
+            echo "${OVPN_SUBNET}.0/24"
+        else
+            echo "10.8.0.0/24"  # Default
+        fi
+    fi
+}
+
+restrict_ssh_access() {
+    if ! check_openvpn_status; then
+        printf "\n${RED}${lang_openvpn_not_installed}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}Restricting SSH access to OpenVPN IPs...${NC}\n"
+    
+    OVPN_SUBNET=$(get_openvpn_subnet)
+    SSH_PORT=$(grep "^Port " /etc/ssh/sshd_config | awk '{print $2}' 2>/dev/null || echo "22")
+    
+    # Backup original sshd_config
+    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)
+    
+    # Remove any existing AllowUsers or AllowGroups restrictions
+    sed -i '/^AllowUsers/d' /etc/ssh/sshd_config
+    sed -i '/^AllowGroups/d' /etc/ssh/sshd_config
+    
+    # Add restriction in sshd_config
+    if ! grep -q "# TinyCP OpenVPN SSH Restriction" /etc/ssh/sshd_config; then
+        echo "" >> /etc/ssh/sshd_config
+        echo "# TinyCP OpenVPN SSH Restriction" >> /etc/ssh/sshd_config
+        echo "Match Address ${OVPN_SUBNET}" >> /etc/ssh/sshd_config
+        echo "    AllowUsers *" >> /etc/ssh/sshd_config
+        echo "Match Address !${OVPN_SUBNET}" >> /etc/ssh/sshd_config
+        echo "    DenyUsers *" >> /etc/ssh/sshd_config
+        echo "Match all" >> /etc/ssh/sshd_config
+    fi
+    
+    # Test SSH configuration
+    if sshd -t; then
+        systemctl reload sshd
+        
+        # Mark as restricted
+        echo "restricted" > /var/tinycp/ssh_restricted
+        echo "$(date)" >> /var/tinycp/ssh_restricted
+        echo "${OVPN_SUBNET}" >> /var/tinycp/ssh_restricted
+        
+        printf "\n${GREEN}${lang_ssh_access_restricted}${NC}\n"
+        printf "${YELLOW}SSH is now restricted to OpenVPN subnet: ${OVPN_SUBNET}${NC}\n"
+        printf "${RED}WARNING: Make sure you can connect via OpenVPN before closing this session!${NC}\n"
+    else
+        printf "\n${RED}SSH configuration test failed. Reverting changes...${NC}\n"
+        cp /etc/ssh/sshd_config.backup.$(date +%Y%m%d)* /etc/ssh/sshd_config 2>/dev/null || true
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+unrestrict_ssh_access() {
+    printf "\n${GREEN}Removing SSH access restrictions...${NC}\n"
+    
+    # Backup original sshd_config
+    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)
+    
+    # Remove TinyCP OpenVPN restrictions
+    sed -i '/# TinyCP OpenVPN SSH Restriction/,/Match all/d' /etc/ssh/sshd_config
+    
+    # Test SSH configuration
+    if sshd -t; then
+        systemctl reload sshd
+        
+        # Remove restriction marker
+        rm -f /var/tinycp/ssh_restricted
+        
+        printf "\n${GREEN}${lang_ssh_access_unrestricted}${NC}\n"
+    else
+        printf "\n${RED}SSH configuration test failed. Reverting changes...${NC}\n"
+        cp /etc/ssh/sshd_config.backup.$(date +%Y%m%d)* /etc/ssh/sshd_config 2>/dev/null || true
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+while [ "${CHOICE}" != "0" ]
+do
+    # Check current status
+    if check_ssh_restriction; then
+        ssh_status="${RED}SSH access is restricted to OpenVPN IPs${NC}"
+        OVPN_SUBNET=$(tail -n 1 /var/tinycp/ssh_restricted)
+        restriction_info="Allowed subnet: ${OVPN_SUBNET}"
+    else
+        ssh_status="${GREEN}SSH access is not restricted${NC}"
+        restriction_info="All IPs can access SSH"
+    fi
+    
+    printf "\n"
+    printf "${GREEN}┌─────────────────────── STATUS ──────────────────────┐${NC}\n"
+    printf "${GREEN}│${NC}  Status: %-40s${GREEN}│${NC}\n" "${ssh_status}"
+    printf "${GREEN}│${NC}  Info: %-42s${GREEN}│${NC}\n" "${restriction_info}"
+    printf "${GREEN}└──────────────────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n"
+    printf "${GREEN}┌─────────────────────── OPTIONS ─────────────────────┐${NC}\n"
+    
+    if check_ssh_restriction; then
+        printf "${GREEN}│${NC}  [1] ⟹  Remove SSH access restriction             ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  [2] ⟹  View current SSH configuration           ${GREEN}│${NC}\n"
+    else
+        printf "${GREEN}│${NC}  [1] ⟹  Restrict SSH access to OpenVPN IPs       ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  [2] ⟹  View current SSH configuration           ${GREEN}│${NC}\n"
+    fi
+    
+    printf "${GREEN}│${NC}  [0] ⟹  ${lang_cancel_action}                            ${GREEN}│${NC}\n"
+    printf "${GREEN}└──────────────────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n"
+    read -r -p " ${GREEN}${SELECT_OPTION}${NC} " CHOICE
+    
+    if [ -z "${CHOICE}" ]
+    then
+        CHOICE=1
+        continue
+    fi
+    
+    case ${CHOICE} in
+        1) 
+            if check_ssh_restriction; then
+                clear
+                printf "\n${RED}Are you sure you want to remove SSH access restriction? [y/N]:${NC} "
+                read -r confirm
+                if [[ "${confirm}" =~ ^[Yy]$ ]]; then
+                    unrestrict_ssh_access
+                fi
+            else
+                clear
+                restrict_ssh_access
+            fi
+            ;;
+        2) 
+            clear
+            printf "\n${GREEN}Current SSH Configuration:${NC}\n"
+            printf "${GREEN}=========================${NC}\n"
+            cat /etc/ssh/sshd_config | grep -A 20 -B 5 "TinyCP\|Match\|Allow\|Deny" || echo "No TinyCP restrictions found"
+            printf "\n${GREEN}SSH Service Status:${NC}\n"
+            printf "${GREEN}==================${NC}\n"
+            systemctl status sshd --no-pager
+            printf "\n"
+            read -r -p "Press any key to continue..." 
+            ;;
+        0) clear; menu_network;;
+        *) clear; printf "%s\n" "${WRONG_OPTION}";;
+    esac
+done

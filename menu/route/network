@@ -1,0 +1,56 @@
+#!/bin/bash
+
+######################################################################
+#           Auto Install & Optimize LEMP Stack on Ubuntu             #
+#                                                                    #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
+#                                                                    #
+#              Please do not remove copyright. Thank!                #
+#  Please do not copy under any circumstance for commercial reason!  #
+######################################################################
+
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/route/parent
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/ipaddress
+source /var/tinycp/menu/lang/"${lang}"
+
+CHOICE=1
+
+printf "\n"
+printf "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}\n"
+printf "${GREEN}│${NC}  %-$(($BOX_WIDTH-1))s${GREEN}│${NC}\n" "${lang_manager_network}"
+printf "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}\n"
+
+while [ "${CHOICE}" != "0" ]
+do
+    printf "\n"
+    printf "${GREEN}┌─────────────────────── NETWORK MANAGER ─────────────────────┐${NC}\n"
+    printf "${GREEN}│${NC}  [1] ⟹  %-$(($BOX_WIDTH-9))s${GREEN}│${NC}\n" "${lang_network_openvpn_install}"
+    printf "${GREEN}│${NC}  [2] ⟹  %-$(($BOX_WIDTH-9))s${GREEN}│${NC}\n" "${lang_network_ssh_access}"
+    printf "${GREEN}│${NC}  [3] ⟹  %-$(($BOX_WIDTH-9))s${GREEN}│${NC}\n" "${lang_network_web_access}"
+    printf "${GREEN}│${NC}  [4] ⟹  %-$(($BOX_WIDTH-9))s${GREEN}│${NC}\n" "${lang_network_directory_access}"
+    printf "${GREEN}│${NC}  [5] ⟹  %-$(($BOX_WIDTH-9))s${GREEN}│${NC}\n" "${lang_network_openvpn_config}"
+    printf "${GREEN}│${NC}  [0] ⟹  %-$(($BOX_WIDTH-9))s${GREEN}│${NC}\n" "${lang_cancel_action}"
+    printf "${GREEN}└─────────────────────────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n"
+    read -r -p " ${GREEN}${SELECT_OPTION}${NC} " CHOICE
+    
+    if [ -z "${CHOICE}" ]
+    then
+        CHOICE=1
+        continue
+    fi
+    
+    case ${CHOICE} in
+        1) clear; network_openvpn_install;;
+        2) clear; network_ssh_access;;
+        3) clear; network_web_access;;
+        4) clear; network_directory_access;;
+        5) clear; network_openvpn_config;;
+        0) clear; menu_primary;;
+        *) clear; printf "%s\n" "${WRONG_OPTION}";;
+    esac
+done

@@ -1,0 +1,234 @@
+#!/bin/bash
+
+######################################################################
+#           Auto Install & Optimize LEMP Stack on Ubuntu             #
+#                                                                    #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
+#                                                                    #
+#              Please do not remove copyright. Thank!                #
+#  Please do not copy under any circumstance for commercial reason!  #
+######################################################################
+
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/menu/lang/"${lang}"
+
+CHOICE=1
+
+printf "\n"
+printf "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}\n"
+printf "${GREEN}│${NC}  %-59s${GREEN}│${NC}\n" "${lang_network_web_access}"
+printf "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}\n"
+
+# Check if OpenVPN is installed
+check_openvpn_status() {
+    if [[ -e /etc/openvpn/server/server.conf ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Get list of domains
+get_domain_list() {
+    if [[ -d /etc/nginx/conf.d ]]; then
+        ls /etc/nginx/conf.d/*.conf 2>/dev/null | sed 's|/etc/nginx/conf.d/||g' | sed 's|.conf||g' | grep -v "default"
+    fi
+}
+
+# Get OpenVPN subnet
+get_openvpn_subnet() {
+    if [[ -f /var/tinycp/openvpn_subnet ]]; then
+        cat /var/tinycp/openvpn_subnet
+    else
+        if [[ -e /etc/openvpn/server/server.conf ]]; then
+            OVPN_SUBNET=$(grep "server " /etc/openvpn/server/server.conf | awk '{print $2}' | cut -d. -f1-3)
+            echo "${OVPN_SUBNET}.0/24"
+        else
+            echo "10.8.0.0/24"
+        fi
+    fi
+}
+
+# Check if domain is restricted
+check_domain_restriction() {
+    local domain="$1"
+    if [[ -f "/var/tinycp/web_restricted_${domain}" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+select_domain() {
+    local domains=($(get_domain_list))
+    
+    if [[ ${#domains[@]} -eq 0 ]]; then
+        printf "\n${RED}${EMPTY_DOMAIN}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return 1
+    fi
+    
+    printf "\n${GREEN}${lang_select_domain}:${NC}\n"
+    printf "${GREEN}====================${NC}\n"
+    
+    local i=1
+    for domain in "${domains[@]}"; do
+        if check_domain_restriction "${domain}"; then
+            status="${RED}[Restricted]${NC}"
+        else
+            status="${GREEN}[Open]${NC}"
+        fi
+        printf "${GREEN}[${i}]${NC} ${domain} ${status}\n"
+        ((i++))
+    done
+    
+    printf "\n"
+    read -r -p "${GREEN}${SELECT_OPTION}${NC} " selected
+    
+    if [[ "${selected}" =~ ^[0-9]+$ ]] && [[ "${selected}" -ge 1 ]] && [[ "${selected}" -le ${#domains[@]} ]]; then
+        SELECTED_DOMAIN="${domains[$((selected-1))]}"
+        return 0
+    else
+        printf "\n${RED}${WRONG_SELECT}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return 1
+    fi
+}
+
+restrict_domain_access() {
+    if ! check_openvpn_status; then
+        printf "\n${RED}${lang_openvpn_not_installed}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    if ! select_domain; then
+        return
+    fi
+    
+    printf "\n${GREEN}Restricting access to ${SELECTED_DOMAIN} for OpenVPN IPs only...${NC}\n"
+    
+    OVPN_SUBNET=$(get_openvpn_subnet)
+    OVPN_IP_RANGE=$(echo ${OVPN_SUBNET} | cut -d'/' -f1 | cut -d'.' -f1-3)
+    
+    # Backup original nginx config
+    cp "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf" "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf.backup.$(date +%Y%m%d_%H%M%S)"
+    
+    # Add IP restriction to nginx config
+    if ! grep -q "# TinyCP OpenVPN Web Restriction" "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf"; then
+        # Find the server block and add allow/deny rules
+        sed -i '/server {/a\
+    # TinyCP OpenVPN Web Restriction\
+    allow '${OVPN_SUBNET}';\
+    deny all;' "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf"
+    fi
+    
+    # Test nginx configuration
+    if nginx -t; then
+        systemctl reload nginx
+        
+        # Mark domain as restricted
+        echo "restricted" > "/var/tinycp/web_restricted_${SELECTED_DOMAIN}"
+        echo "$(date)" >> "/var/tinycp/web_restricted_${SELECTED_DOMAIN}"
+        echo "${OVPN_SUBNET}" >> "/var/tinycp/web_restricted_${SELECTED_DOMAIN}"
+        
+        printf "\n${GREEN}${lang_web_access_restricted}${NC}\n"
+        printf "${YELLOW}Domain ${SELECTED_DOMAIN} is now restricted to OpenVPN subnet: ${OVPN_SUBNET}${NC}\n"
+    else
+        printf "\n${RED}Nginx configuration test failed. Reverting changes...${NC}\n"
+        cp "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf.backup."* "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf" 2>/dev/null || true
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+unrestrict_domain_access() {
+    if ! select_domain; then
+        return
+    fi
+    
+    if ! check_domain_restriction "${SELECTED_DOMAIN}"; then
+        printf "\n${YELLOW}Domain ${SELECTED_DOMAIN} is not restricted.${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}Removing access restrictions for ${SELECTED_DOMAIN}...${NC}\n"
+    
+    # Backup original nginx config
+    cp "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf" "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf.backup.$(date +%Y%m%d_%H%M%S)"
+    
+    # Remove TinyCP OpenVPN restrictions
+    sed -i '/# TinyCP OpenVPN Web Restriction/,+2d' "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf"
+    
+    # Test nginx configuration
+    if nginx -t; then
+        systemctl reload nginx
+        
+        # Remove restriction marker
+        rm -f "/var/tinycp/web_restricted_${SELECTED_DOMAIN}"
+        
+        printf "\n${GREEN}${lang_web_access_unrestricted}${NC}\n"
+        printf "${GREEN}Domain ${SELECTED_DOMAIN} is now accessible from all IPs.${NC}\n"
+    else
+        printf "\n${RED}Nginx configuration test failed. Reverting changes...${NC}\n"
+        cp "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf.backup."* "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf" 2>/dev/null || true
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+list_restricted_domains() {
+    printf "\n${GREEN}Restricted Domains Status:${NC}\n"
+    printf "${GREEN}=========================${NC}\n"
+    
+    local domains=($(get_domain_list))
+    local found_restricted=false
+    
+    for domain in "${domains[@]}"; do
+        if check_domain_restriction "${domain}"; then
+            OVPN_SUBNET=$(tail -n 1 "/var/tinycp/web_restricted_${domain}")
+            printf "${RED}[RESTRICTED]${NC} ${domain} -> ${OVPN_SUBNET}\n"
+            found_restricted=true
+        else
+            printf "${GREEN}[OPEN]${NC}       ${domain}\n"
+        fi
+    done
+    
+    if [[ "${found_restricted}" == "false" ]]; then
+        printf "\n${YELLOW}No domains are currently restricted.${NC}\n"
+    fi
+    
+    printf "\n"
+    read -r -p "Press any key to continue..." 
+}
+
+while [ "${CHOICE}" != "0" ]
+do
+    printf "\n"
+    printf "${GREEN}┌─────────────────────── OPTIONS ─────────────────────┐${NC}\n"
+    printf "${GREEN}│${NC}  [1] ⟹  Restrict domain access to OpenVPN IPs    ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [2] ⟹  Remove domain access restriction          ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [3] ⟹  List all domains and their status         ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [0] ⟹  ${lang_cancel_action}                            ${GREEN}│${NC}\n"
+    printf "${GREEN}└──────────────────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n"
+    read -r -p " ${GREEN}${SELECT_OPTION}${NC} " CHOICE
+    
+    if [ -z "${CHOICE}" ]
+    then
+        CHOICE=1
+        continue
+    fi
+    
+    case ${CHOICE} in
+        1) clear; restrict_domain_access;;
+        2) clear; unrestrict_domain_access;;
+        3) clear; list_restricted_domains;;
+        0) clear; menu_network;;
+        *) clear; printf "%s\n" "${WRONG_OPTION}";;
+    esac
+done

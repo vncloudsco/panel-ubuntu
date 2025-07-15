@@ -1,0 +1,364 @@
+#!/bin/bash
+
+######################################################################
+#           Auto Install & Optimize LEMP Stack on Ubuntu             #
+#                                                                    #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
+#                                                                    #
+#              Please do not remove copyright. Thank!                #
+#  Please do not copy under any circumstance for commercial reason!  #
+######################################################################
+
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/menu/lang/"${lang}"
+
+CHOICE=1
+
+printf "\n"
+printf "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}\n"
+printf "${GREEN}│${NC}  %-59s${GREEN}│${NC}\n" "${lang_network_directory_access}"
+printf "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}\n"
+
+# Check if OpenVPN is installed
+check_openvpn_status() {
+    if [[ -e /etc/openvpn/server/server.conf ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Get list of domains
+get_domain_list() {
+    if [[ -d /etc/nginx/conf.d ]]; then
+        ls /etc/nginx/conf.d/*.conf 2>/dev/null | sed 's|/etc/nginx/conf.d/||g' | sed 's|.conf||g' | grep -v "default"
+    fi
+}
+
+# Get OpenVPN subnet
+get_openvpn_subnet() {
+    if [[ -f /var/tinycp/openvpn_subnet ]]; then
+        cat /var/tinycp/openvpn_subnet
+    else
+        if [[ -e /etc/openvpn/server/server.conf ]]; then
+            OVPN_SUBNET=$(grep "server " /etc/openvpn/server/server.conf | awk '{print $2}' | cut -d. -f1-3)
+            echo "${OVPN_SUBNET}.0/24"
+        else
+            echo "10.8.0.0/24"
+        fi
+    fi
+}
+
+# Check if WordPress is installed on domain
+check_wordpress() {
+    local domain="$1"
+    local doc_root="/var/www/${domain}/public_html"
+    
+    if [[ -f "${doc_root}/wp-config.php" ]] || [[ -f "${doc_root}/wp-content/index.php" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check if directory is restricted
+check_directory_restriction() {
+    local domain="$1"
+    local directory="$2"
+    local restriction_file="/var/tinycp/dir_restricted_${domain}_$(echo ${directory} | sed 's|/|_|g')"
+    
+    if [[ -f "${restriction_file}" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+select_domain() {
+    local domains=($(get_domain_list))
+    
+    if [[ ${#domains[@]} -eq 0 ]]; then
+        printf "\n${RED}${EMPTY_DOMAIN}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return 1
+    fi
+    
+    printf "\n${GREEN}${lang_select_domain}:${NC}\n"
+    printf "${GREEN}====================${NC}\n"
+    
+    local i=1
+    for domain in "${domains[@]}"; do
+        if check_wordpress "${domain}"; then
+            wp_status="${BLUE}[WordPress]${NC}"
+        else
+            wp_status="${YELLOW}[Static]${NC}"
+        fi
+        printf "${GREEN}[${i}]${NC} ${domain} ${wp_status}\n"
+        ((i++))
+    done
+    
+    printf "\n"
+    read -r -p "${GREEN}${SELECT_OPTION}${NC} " selected
+    
+    if [[ "${selected}" =~ ^[0-9]+$ ]] && [[ "${selected}" -ge 1 ]] && [[ "${selected}" -le ${#domains[@]} ]]; then
+        SELECTED_DOMAIN="${domains[$((selected-1))]}"
+        return 0
+    else
+        printf "\n${RED}${WRONG_SELECT}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return 1
+    fi
+}
+
+input_directory() {
+    if check_wordpress "${SELECTED_DOMAIN}"; then
+        printf "\n${GREEN}WordPress detected! Common directories to protect:${NC}\n"
+        printf "${GREEN}[1]${NC} wp-admin (with AJAX support)\n"
+        printf "${GREEN}[2]${NC} wp-content/uploads\n"
+        printf "${GREEN}[3]${NC} Custom directory\n"
+        printf "\n"
+        read -r -p "${GREEN}Select option [1-3]:${NC} " wp_option
+        
+        case ${wp_option} in
+            1) SELECTED_DIRECTORY="wp-admin";;
+            2) SELECTED_DIRECTORY="wp-content/uploads";;
+            3) 
+                printf "\n"
+                read -r -p "${GREEN}${lang_enter_directory}:${NC} " SELECTED_DIRECTORY
+                ;;
+            *) 
+                printf "\n${RED}${WRONG_OPTION}${NC}\n"
+                return 1
+                ;;
+        esac
+    else
+        printf "\n"
+        read -r -p "${GREEN}${lang_enter_directory}:${NC} " SELECTED_DIRECTORY
+    fi
+    
+    # Clean up directory path
+    SELECTED_DIRECTORY=$(echo "${SELECTED_DIRECTORY}" | sed 's|^/||' | sed 's|/$||')
+    
+    if [[ -z "${SELECTED_DIRECTORY}" ]]; then
+        printf "\n${RED}Directory cannot be empty${NC}\n"
+        return 1
+    fi
+    
+    return 0
+}
+
+restrict_directory_access() {
+    if ! check_openvpn_status; then
+        printf "\n${RED}${lang_openvpn_not_installed}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    if ! select_domain; then
+        return
+    fi
+    
+    if ! input_directory; then
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}Restricting access to ${SELECTED_DOMAIN}/${SELECTED_DIRECTORY} for OpenVPN IPs only...${NC}\n"
+    
+    OVPN_SUBNET=$(get_openvpn_subnet)
+    
+    # Backup original nginx config
+    cp "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf" "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf.backup.$(date +%Y%m%d_%H%M%S)"
+    
+    # Create location block for directory restriction
+    local location_block=""
+    
+    if [[ "${SELECTED_DIRECTORY}" == "wp-admin" ]]; then
+        # Special handling for wp-admin with AJAX support
+        location_block="
+    # TinyCP OpenVPN Directory Restriction - wp-admin
+    location ~ ^/(wp-admin|wp-login\.php) {
+        allow ${OVPN_SUBNET};
+        deny all;
+        
+        location ~* ^/wp-admin/admin-ajax\.php$ {
+            allow all;
+        }
+        
+        try_files \$uri \$uri/ /index.php?\$args;
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_pass unix:/var/run/php/php\${CURRENT_PHP_VERSION}-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        }
+    }"
+    else
+        # Standard directory restriction
+        location_block="
+    # TinyCP OpenVPN Directory Restriction - ${SELECTED_DIRECTORY}
+    location /${SELECTED_DIRECTORY}/ {
+        allow ${OVPN_SUBNET};
+        deny all;
+        
+        try_files \$uri \$uri/ /index.php?\$args;
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_pass unix:/var/run/php/php\${CURRENT_PHP_VERSION}-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
+        }
+    }"
+    fi
+    
+    # Add location block before the last closing brace
+    sed -i "/^}$/i\\${location_block}" "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf"
+    
+    # Test nginx configuration
+    if nginx -t; then
+        systemctl reload nginx
+        
+        # Mark directory as restricted
+        local restriction_file="/var/tinycp/dir_restricted_${SELECTED_DOMAIN}_$(echo ${SELECTED_DIRECTORY} | sed 's|/|_|g')"
+        echo "restricted" > "${restriction_file}"
+        echo "$(date)" >> "${restriction_file}"
+        echo "${OVPN_SUBNET}" >> "${restriction_file}"
+        echo "${SELECTED_DIRECTORY}" >> "${restriction_file}"
+        
+        printf "\n${GREEN}${lang_directory_access_restricted}${NC}\n"
+        printf "${YELLOW}Directory ${SELECTED_DOMAIN}/${SELECTED_DIRECTORY} is now restricted to OpenVPN subnet: ${OVPN_SUBNET}${NC}\n"
+        
+        if [[ "${SELECTED_DIRECTORY}" == "wp-admin" ]]; then
+            printf "${BLUE}Note: admin-ajax.php is still accessible for WordPress AJAX functionality${NC}\n"
+        fi
+    else
+        printf "\n${RED}Nginx configuration test failed. Reverting changes...${NC}\n"
+        cp "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf.backup."* "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf" 2>/dev/null || true
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+unrestrict_directory_access() {
+    if ! select_domain; then
+        return
+    fi
+    
+    # List restricted directories for this domain
+    local restricted_dirs=()
+    for file in /var/tinycp/dir_restricted_${SELECTED_DOMAIN}_*; do
+        if [[ -f "${file}" ]]; then
+            local dir=$(tail -n 1 "${file}")
+            restricted_dirs+=("${dir}")
+        fi
+    done
+    
+    if [[ ${#restricted_dirs[@]} -eq 0 ]]; then
+        printf "\n${YELLOW}No restricted directories found for ${SELECTED_DOMAIN}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}Restricted directories for ${SELECTED_DOMAIN}:${NC}\n"
+    printf "${GREEN}===========================================${NC}\n"
+    
+    local i=1
+    for dir in "${restricted_dirs[@]}"; do
+        printf "${GREEN}[${i}]${NC} ${dir}\n"
+        ((i++))
+    done
+    
+    printf "\n"
+    read -r -p "${GREEN}Select directory to unrestrict [1-${#restricted_dirs[@]}]:${NC} " selected
+    
+    if [[ "${selected}" =~ ^[0-9]+$ ]] && [[ "${selected}" -ge 1 ]] && [[ "${selected}" -le ${#restricted_dirs[@]} ]]; then
+        SELECTED_DIRECTORY="${restricted_dirs[$((selected-1))]}"
+    else
+        printf "\n${RED}${WRONG_SELECT}${NC}\n"
+        read -r -p "Press any key to continue..." 
+        return
+    fi
+    
+    printf "\n${GREEN}Removing access restrictions for ${SELECTED_DOMAIN}/${SELECTED_DIRECTORY}...${NC}\n"
+    
+    # Backup original nginx config
+    cp "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf" "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf.backup.$(date +%Y%m%d_%H%M%S)"
+    
+    # Remove TinyCP OpenVPN directory restrictions for this specific directory
+    if [[ "${SELECTED_DIRECTORY}" == "wp-admin" ]]; then
+        sed -i '/# TinyCP OpenVPN Directory Restriction - wp-admin/,/^    }$/d' "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf"
+    else
+        sed -i "/# TinyCP OpenVPN Directory Restriction - ${SELECTED_DIRECTORY//\//\\\/}/,/^    }$/d" "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf"
+    fi
+    
+    # Test nginx configuration
+    if nginx -t; then
+        systemctl reload nginx
+        
+        # Remove restriction marker
+        local restriction_file="/var/tinycp/dir_restricted_${SELECTED_DOMAIN}_$(echo ${SELECTED_DIRECTORY} | sed 's|/|_|g')"
+        rm -f "${restriction_file}"
+        
+        printf "\n${GREEN}${lang_directory_access_unrestricted}${NC}\n"
+        printf "${GREEN}Directory ${SELECTED_DOMAIN}/${SELECTED_DIRECTORY} is now accessible from all IPs.${NC}\n"
+    else
+        printf "\n${RED}Nginx configuration test failed. Reverting changes...${NC}\n"
+        cp "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf.backup."* "/etc/nginx/conf.d/${SELECTED_DOMAIN}.conf" 2>/dev/null || true
+    fi
+    
+    read -r -p "Press any key to continue..." 
+}
+
+list_restricted_directories() {
+    printf "\n${GREEN}Restricted Directories Status:${NC}\n"
+    printf "${GREEN}=============================${NC}\n"
+    
+    local found_restricted=false
+    
+    for file in /var/tinycp/dir_restricted_*; do
+        if [[ -f "${file}" ]]; then
+            local filename=$(basename "${file}")
+            local domain=$(echo "${filename}" | sed 's/dir_restricted_//' | sed 's/_[^_]*$//' | sed 's/_/./g')
+            local directory=$(tail -n 1 "${file}")
+            local subnet=$(tail -n 2 "${file}" | head -n 1)
+            
+            printf "${RED}[RESTRICTED]${NC} ${domain}/${directory} -> ${subnet}\n"
+            found_restricted=true
+        fi
+    done
+    
+    if [[ "${found_restricted}" == "false" ]]; then
+        printf "\n${YELLOW}No directories are currently restricted.${NC}\n"
+    fi
+    
+    printf "\n"
+    read -r -p "Press any key to continue..." 
+}
+
+while [ "${CHOICE}" != "0" ]
+do
+    printf "\n"
+    printf "${GREEN}┌─────────────────────── OPTIONS ─────────────────────┐${NC}\n"
+    printf "${GREEN}│${NC}  [1] ⟹  Restrict directory access to OpenVPN IPs  ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [2] ⟹  Remove directory access restriction       ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [3] ⟹  List all restricted directories           ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}  [0] ⟹  ${lang_cancel_action}                            ${GREEN}│${NC}\n"
+    printf "${GREEN}└──────────────────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n"
+    read -r -p " ${GREEN}${SELECT_OPTION}${NC} " CHOICE
+    
+    if [ -z "${CHOICE}" ]
+    then
+        CHOICE=1
+        continue
+    fi
+    
+    case ${CHOICE} in
+        1) clear; restrict_directory_access;;
+        2) clear; unrestrict_directory_access;;
+        3) clear; list_restricted_directories;;
+        0) clear; menu_network;;
+        *) clear; printf "%s\n" "${WRONG_OPTION}";;
+    esac
+done

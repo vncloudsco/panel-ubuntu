@@ -1,0 +1,182 @@
+#!/bin/bash
+
+######################################################################
+#           Auto Install & Optimize LEMP Stack on Ubuntu             #
+#                                                                    #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
+#                                                                    #
+#              Please do not remove copyright. Thank!                #
+#  Please do not copy under any circumstance for commercial reason!  #
+######################################################################
+
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/menu/lang/"${lang}"
+
+CHOICE=1
+
+printf "\n"
+printf "${GREEN}┌──────────────────────────────────────────────────────────────┐${NC}\n"
+printf "${GREEN}│${NC}  %-59s${GREEN}│${NC}\n" "${lang_network_openvpn_install}"
+printf "${GREEN}└──────────────────────────────────────────────────────────────┘${NC}\n"
+
+# Check if OpenVPN is installed
+check_openvpn_status() {
+    if [[ -e /etc/openvpn/server/server.conf ]]; then
+        return 0  # OpenVPN is installed
+    else
+        return 1  # OpenVPN is not installed
+    fi
+}
+
+install_openvpn() {
+    printf "\n${GREEN}Installing OpenVPN with recommended settings...${NC}\n"
+    
+    # Copy the OpenVPN install script to a temporary location
+    cp /var/tinycp/openvpn-install/openvpn-install.sh /tmp/openvpn-install.sh
+    chmod +x /tmp/openvpn-install.sh
+    
+    # Run the installation with default settings
+    cd /tmp
+    
+    # Set environment variables for automatic installation
+    export AUTO_INSTALL=y
+    export APPROVE_INSTALL=y
+    export APPROVE_IP=$(curl -4 ifconfig.co 2>/dev/null || curl -4 icanhazip.com 2>/dev/null || curl -4 ipinfo.io/ip 2>/dev/null)
+    export APPROVE_PUBLIC_IP=${APPROVE_IP}
+    export ENDPOINT=${APPROVE_IP}
+    export PROTOCOL_CHOICE=1  # UDP
+    export PORT_CHOICE=1194
+    export DNS=1  # System resolvers
+    export CLIENT=client
+    
+    ./openvpn-install.sh
+    
+    if [[ $? -eq 0 ]]; then
+        printf "\n${GREEN}${lang_openvpn_install_success}${NC}\n"
+        
+        # Create OpenVPN status file
+        echo "installed" > /var/tinycp/openvpn_status
+        echo "$(date)" >> /var/tinycp/openvpn_status
+        
+        # Get OpenVPN subnet for future use
+        OVPN_SUBNET=$(grep "server " /etc/openvpn/server/server.conf | awk '{print $2}' | cut -d. -f1-3)
+        echo "${OVPN_SUBNET}.0/24" > /var/tinycp/openvpn_subnet
+        
+    else
+        printf "\n${RED}OpenVPN installation failed${NC}\n"
+    fi
+    
+    # Cleanup
+    rm -f /tmp/openvpn-install.sh
+    
+    read -r -p "Press any key to continue..." 
+}
+
+uninstall_openvpn() {
+    printf "\n${RED}Uninstalling OpenVPN...${NC}\n"
+    
+    # Copy the OpenVPN install script to a temporary location
+    cp /var/tinycp/openvpn-install/openvpn-install.sh /tmp/openvpn-install.sh
+    chmod +x /tmp/openvpn-install.sh
+    
+    cd /tmp
+    
+    # Run the uninstallation
+    echo "y" | ./openvpn-install.sh
+    
+    if [[ $? -eq 0 ]]; then
+        printf "\n${GREEN}${lang_openvpn_uninstall_success}${NC}\n"
+        
+        # Remove OpenVPN status files
+        rm -f /var/tinycp/openvpn_status
+        rm -f /var/tinycp/openvpn_subnet
+        
+        # Remove any network restrictions that were set
+        rm -f /var/tinycp/ssh_restricted
+        rm -f /var/tinycp/web_restricted_*
+        rm -f /var/tinycp/dir_restricted_*
+        
+    else
+        printf "\n${RED}OpenVPN uninstallation failed${NC}\n"
+    fi
+    
+    # Cleanup
+    rm -f /tmp/openvpn-install.sh
+    
+    read -r -p "Press any key to continue..." 
+}
+
+while [ "${CHOICE}" != "0" ]
+do
+    # Check current OpenVPN status
+    if check_openvpn_status; then
+        openvpn_status="${GREEN}OpenVPN is installed${NC}"
+        action_text="Uninstall OpenVPN"
+        action_number="2"
+    else
+        openvpn_status="${RED}OpenVPN is not installed${NC}"
+        action_text="Install OpenVPN"
+        action_number="1"
+    fi
+    
+    printf "\n"
+    printf "${GREEN}┌─────────────────────── STATUS ──────────────────────┐${NC}\n"
+    printf "${GREEN}│${NC}  Status: %-40s${GREEN}│${NC}\n" "${openvpn_status}"
+    printf "${GREEN}└──────────────────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n"
+    printf "${GREEN}┌─────────────────────── OPTIONS ─────────────────────┐${NC}\n"
+    
+    if check_openvpn_status; then
+        printf "${GREEN}│${NC}  [1] ⟹  Show OpenVPN Status                     ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  [2] ⟹  Uninstall OpenVPN                       ${GREEN}│${NC}\n"
+    else
+        printf "${GREEN}│${NC}  [1] ⟹  Install OpenVPN                         ${GREEN}│${NC}\n"
+    fi
+    
+    printf "${GREEN}│${NC}  [0] ⟹  ${lang_cancel_action}                            ${GREEN}│${NC}\n"
+    printf "${GREEN}└──────────────────────────────────────────────────────┘${NC}\n"
+    
+    printf "\n"
+    read -r -p " ${GREEN}${SELECT_OPTION}${NC} " CHOICE
+    
+    if [ -z "${CHOICE}" ]
+    then
+        CHOICE=1
+        continue
+    fi
+    
+    case ${CHOICE} in
+        1) 
+            if check_openvpn_status; then
+                clear
+                printf "\n${GREEN}OpenVPN Status:${NC}\n"
+                systemctl status openvpn-server@server.service --no-pager
+                printf "\n${GREEN}OpenVPN Configuration:${NC}\n"
+                cat /etc/openvpn/server/server.conf
+                printf "\n"
+                read -r -p "Press any key to continue..." 
+            else
+                clear
+                install_openvpn
+            fi
+            ;;
+        2) 
+            if check_openvpn_status; then
+                clear
+                printf "\n${RED}Are you sure you want to uninstall OpenVPN? [y/N]:${NC} "
+                read -r confirm
+                if [[ "${confirm}" =~ ^[Yy]$ ]]; then
+                    uninstall_openvpn
+                fi
+            else
+                clear
+                printf "%s\n" "${WRONG_OPTION}"
+            fi
+            ;;
+        0) clear; menu_network;;
+        *) clear; printf "%s\n" "${WRONG_OPTION}";;
+    esac
+done

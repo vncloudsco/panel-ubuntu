@@ -532,3 +532,27 @@ telegram_disk_notify(){
 telegram_delete_notify(){
     . /var/tinycp/menu/controller/telegram/delete_notify
 }
+
+menu_network(){
+    . /var/tinycp/menu/route/network
+}
+
+network_openvpn_install(){
+    . /var/tinycp/menu/controller/network/openvpn_install
+}
+
+network_ssh_access(){
+    . /var/tinycp/menu/controller/network/ssh_access
+}
+
+network_web_access(){
+    . /var/tinycp/menu/controller/network/web_access
+}
+
+network_directory_access(){
+    . /var/tinycp/menu/controller/network/directory_access
+}
+
+network_openvpn_config(){
+    . /var/tinycp/menu/controller/network/openvpn_config
+}
