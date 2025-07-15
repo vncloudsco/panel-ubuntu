@@ -10,6 +10,8 @@
 #  Please do not copy under any circumstance for commercial reason!  #
 ######################################################################
 
+set -e
+
 OS_VER=$(grep -oP '(?<=^VERSION_ID=).+' /etc/os-release | tr -d '"')
 LIST_OS_VER_SUPPORT=('22.04' '24.04')
 rm -rf ubuntu
