@@ -32,11 +32,11 @@ check_openvpn_status() {
 
 # Check if SSH is restricted
 check_ssh_restriction() {
+    # Simply check if marker file exists
     if [[ -f /var/tinycp/ssh_restricted ]]; then
         return 0
-    else
-        return 1
     fi
+    return 1
 }
 
 # Get OpenVPN subnet
@@ -54,6 +54,45 @@ get_openvpn_subnet() {
     fi
 }
 
+# Get OpenVPN server IP
+get_openvpn_server_ip() {
+    # Try to get IP from tun0 interface (actual OpenVPN server IP)
+    OVPN_SERVER_IP=$(ip addr show tun0 2>/dev/null | grep "inet " | awk '{print $2}' | cut -d'/' -f1)
+    
+    if [[ -n "${OVPN_SERVER_IP}" ]]; then
+        echo "${OVPN_SERVER_IP}"
+    else
+        # Fallback: calculate from subnet (first IP in range)
+        if [[ -e /etc/openvpn/server/server.conf ]]; then
+            OVPN_NETWORK=$(grep "server " /etc/openvpn/server/server.conf | awk '{print $2}' | cut -d. -f1-3)
+            if [[ -n "${OVPN_NETWORK}" ]]; then
+                echo "${OVPN_NETWORK}.1"
+            else
+                echo "10.8.0.1"  # Default
+            fi
+        else
+            echo "10.8.0.1"  # Default
+        fi
+    fi
+}
+
+# Verify if SSH restriction is actually working
+verify_ssh_restriction() {
+    # Check if UFW is active
+    if ! ufw status | grep -q "Status: active"; then
+        return 1  # UFW not active
+    fi
+    
+    SSH_PORT=$(grep -E "^Port |^#.*Port " /etc/ssh/sshd_config | head -1 | awk '{print $NF}' 2>/dev/null || echo "22")
+    
+    # Check if there's a DENY rule for SSH port (that means restriction is active)
+    if ufw status | grep -q "${SSH_PORT}.*DENY"; then
+        return 0  # Restriction is working
+    fi
+    
+    return 1  # No restriction found
+}
+
 restrict_ssh_access() {
     if ! check_openvpn_status; then
         printf "\n${RED}${lang_openvpn_not_installed}${NC}\n"
@@ -61,70 +100,80 @@ restrict_ssh_access() {
         return
     fi
     
-    printf "\n${GREEN}Restricting SSH access to OpenVPN IPs...${NC}\n"
+    printf "\n${GREEN}Restricting SSH access to OpenVPN IPs using UFW firewall...${NC}\n"
     
     OVPN_SUBNET=$(get_openvpn_subnet)
-    SSH_PORT=$(grep "^Port " /etc/ssh/sshd_config | awk '{print $2}' 2>/dev/null || echo "22")
+    SSH_PORT=$(grep -E "^Port |^#.*Port " /etc/ssh/sshd_config | head -1 | awk '{print $NF}' 2>/dev/null || echo "22")
     
-    # Backup original sshd_config
-    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)
-    
-    # Remove any existing AllowUsers or AllowGroups restrictions
-    sed -i '/^AllowUsers/d' /etc/ssh/sshd_config
-    sed -i '/^AllowGroups/d' /etc/ssh/sshd_config
-    
-    # Add restriction in sshd_config
-    if ! grep -q "# TinyCP OpenVPN SSH Restriction" /etc/ssh/sshd_config; then
-        echo "" >> /etc/ssh/sshd_config
-        echo "# TinyCP OpenVPN SSH Restriction" >> /etc/ssh/sshd_config
-        echo "Match Address ${OVPN_SUBNET}" >> /etc/ssh/sshd_config
-        echo "    AllowUsers *" >> /etc/ssh/sshd_config
-        echo "Match Address !${OVPN_SUBNET}" >> /etc/ssh/sshd_config
-        echo "    DenyUsers *" >> /etc/ssh/sshd_config
-        echo "Match all" >> /etc/ssh/sshd_config
+    # Check if UFW is installed
+    if ! command -v ufw &> /dev/null; then
+        printf "\n${YELLOW}Installing UFW firewall...${NC}\n"
+        apt-get update && apt-get install -y ufw
     fi
     
-    # Test SSH configuration
-    if sshd -t; then
-        systemctl reload sshd
-        
-        # Mark as restricted
-        echo "restricted" > /var/tinycp/ssh_restricted
-        echo "$(date)" >> /var/tinycp/ssh_restricted
-        echo "${OVPN_SUBNET}" >> /var/tinycp/ssh_restricted
-        
-        printf "\n${GREEN}${lang_ssh_access_restricted}${NC}\n"
-        printf "${YELLOW}SSH is now restricted to OpenVPN subnet: ${OVPN_SUBNET}${NC}\n"
-        printf "${RED}WARNING: Make sure you can connect via OpenVPN before closing this session!${NC}\n"
-    else
-        printf "\n${RED}SSH configuration test failed. Reverting changes...${NC}\n"
-        cp /etc/ssh/sshd_config.backup.$(date +%Y%m%d)* /etc/ssh/sshd_config 2>/dev/null || true
+    # Enable UFW if not enabled
+    if ! ufw status | grep -q "Status: active"; then
+        printf "\n${YELLOW}Enabling UFW firewall...${NC}\n"
+        ufw --force enable
     fi
+    
+    # Simple 2-command approach
+    printf "\n${GREEN}Adding UFW rule: Allow SSH from OpenVPN subnet ${OVPN_SUBNET} on port ${SSH_PORT}${NC}\n"
+    ufw allow from ${OVPN_SUBNET} to any port ${SSH_PORT} proto tcp
+    
+    printf "\n${GREEN}Adding UFW rule: Deny SSH from all other IPs on port ${SSH_PORT}${NC}\n"
+    ufw deny ${SSH_PORT}/tcp
+    
+    # Mark as restricted
+    echo "restricted" > /var/tinycp/ssh_restricted
+    echo "$(date)" >> /var/tinycp/ssh_restricted
+    echo "${OVPN_SUBNET}" >> /var/tinycp/ssh_restricted
+    echo "firewall" >> /var/tinycp/ssh_restricted
+    
+    printf "\n${GREEN}${lang_ssh_access_restricted}${NC}\n"
+    printf "${YELLOW}SSH is now restricted to OpenVPN subnet: ${OVPN_SUBNET} via UFW firewall${NC}\n"
+    printf "\n${GREEN}┌─────────────────── CONNECTION INFO ───────────────────┐${NC}\n"
+    printf "${GREEN}│${NC} To SSH to this server after restriction:             ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}                                                       ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC} 1. Connect to OpenVPN first                          ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC} 2. SSH to server IP: ${YELLOW}$(get_openvpn_server_ip)${NC}                     ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC}                                                       ${GREEN}│${NC}\n"
+    printf "${GREEN}│${NC} Example: ssh $(whoami)@$(get_openvpn_server_ip)              ${GREEN}│${NC}\n"
+    printf "${GREEN}└───────────────────────────────────────────────────────┘${NC}\n"
+    printf "${RED}WARNING: Make sure you can connect via OpenVPN before closing this session!${NC}\n"
+    printf "${YELLOW}Current UFW status:${NC}\n"
+    ufw status numbered
     
     read -r -p "Press any key to continue..." 
 }
 
 unrestrict_ssh_access() {
-    printf "\n${GREEN}Removing SSH access restrictions...${NC}\n"
+    printf "\n${GREEN}Removing SSH access restrictions from UFW firewall...${NC}\n"
     
-    # Backup original sshd_config
-    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)
+    SSH_PORT=$(grep -E "^Port |^#.*Port " /etc/ssh/sshd_config | head -1 | awk '{print $NF}' 2>/dev/null || echo "22")
     
-    # Remove TinyCP OpenVPN restrictions
-    sed -i '/# TinyCP OpenVPN SSH Restriction/,/Match all/d' /etc/ssh/sshd_config
+    # Get all SSH-related rule numbers and delete them
+    printf "\n${YELLOW}Removing UFW SSH restriction rules...${NC}\n"
     
-    # Test SSH configuration
-    if sshd -t; then
-        systemctl reload sshd
-        
-        # Remove restriction marker
-        rm -f /var/tinycp/ssh_restricted
-        
-        printf "\n${GREEN}${lang_ssh_access_unrestricted}${NC}\n"
-    else
-        printf "\n${RED}SSH configuration test failed. Reverting changes...${NC}\n"
-        cp /etc/ssh/sshd_config.backup.$(date +%Y%m%d)* /etc/ssh/sshd_config 2>/dev/null || true
-    fi
+    # Get rule numbers for SSH rules and delete them one by one
+    ufw status numbered | grep -E "${SSH_PORT}|ssh" | while read line; do
+        RULE_NUM=$(echo "$line" | sed -n 's/^\[\s*\([0-9]*\)\].*/\1/p')
+        if [[ -n "${RULE_NUM}" ]]; then
+            printf "Removing UFW rule #${RULE_NUM}: $line\n"
+            ufw --force delete ${RULE_NUM}
+        fi
+    done
+    
+    # Add back general SSH allow rule
+    printf "\n${GREEN}Adding back general SSH access rule for port ${SSH_PORT}${NC}\n"
+    ufw allow ${SSH_PORT}/tcp
+    
+    # Remove restriction marker
+    rm -f /var/tinycp/ssh_restricted
+    
+    printf "\n${GREEN}${lang_ssh_access_unrestricted}${NC}\n"
+    printf "${YELLOW}Current UFW status:${NC}\n"
+    ufw status numbered
     
     read -r -p "Press any key to continue..." 
 }
@@ -132,10 +181,14 @@ unrestrict_ssh_access() {
 while [ "${CHOICE}" != "0" ]
 do
     # Check current status
-    if check_ssh_restriction; then
+    if check_ssh_restriction && verify_ssh_restriction; then
         ssh_status="${RED}SSH access is restricted to OpenVPN IPs${NC}"
-        OVPN_SUBNET=$(tail -n 1 /var/tinycp/ssh_restricted)
-        restriction_info="Allowed subnet: ${OVPN_SUBNET}"
+        OVPN_SUBNET=$(get_openvpn_subnet)
+        OVPN_SERVER_IP=$(get_openvpn_server_ip)
+        restriction_info="Allowed subnet: ${OVPN_SUBNET} | Server IP: ${OVPN_SERVER_IP}"
+    elif [[ -f /var/tinycp/ssh_restricted ]] && ! verify_ssh_restriction; then
+        ssh_status="${YELLOW}SSH restriction FAILED - UFW config error detected${NC}"
+        restriction_info="Marker file exists but UFW firewall rules are invalid"
     else
         ssh_status="${GREEN}SSH access is not restricted${NC}"
         restriction_info="All IPs can access SSH"
@@ -145,17 +198,34 @@ do
     printf "${GREEN}┌─────────────────────── STATUS ──────────────────────┐${NC}\n"
     printf "${GREEN}│${NC}  Status: %-40s${GREEN}│${NC}\n" "${ssh_status}"
     printf "${GREEN}│${NC}  Info: %-42s${GREEN}│${NC}\n" "${restriction_info}"
+    
+    # Show additional info if SSH is restricted
+    if check_ssh_restriction && verify_ssh_restriction; then
+        printf "${GREEN}├──────────────────────────────────────────────────────┤${NC}\n"
+        printf "${GREEN}│${NC}  ${YELLOW}To SSH after restriction:${NC}                        ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  1. Connect to OpenVPN first                        ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  2. SSH to: $(get_openvpn_server_ip)                             ${GREEN}│${NC}\n"
+    elif [[ -f /var/tinycp/ssh_restricted ]] && ! verify_ssh_restriction; then
+        printf "${GREEN}├──────────────────────────────────────────────────────┤${NC}\n"
+        printf "${GREEN}│${NC}  ${RED}ERROR: SSH restriction failed to apply!${NC}            ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  UFW firewall rules may be corrupted or incomplete  ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  ${YELLOW}Recommended: Remove and re-apply restriction${NC}      ${GREEN}│${NC}\n"
+    fi
+    
     printf "${GREEN}└──────────────────────────────────────────────────────┘${NC}\n"
     
     printf "\n"
     printf "${GREEN}┌─────────────────────── OPTIONS ─────────────────────┐${NC}\n"
     
-    if check_ssh_restriction; then
+    if check_ssh_restriction && verify_ssh_restriction; then
         printf "${GREEN}│${NC}  [1] ⟹  Remove SSH access restriction             ${GREEN}│${NC}\n"
-        printf "${GREEN}│${NC}  [2] ⟹  View current SSH configuration           ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  [2] ⟹  View current UFW firewall status         ${GREEN}│${NC}\n"
+    elif [[ -f /var/tinycp/ssh_restricted ]] && ! verify_ssh_restriction; then
+        printf "${GREEN}│${NC}  [1] ⟹  Fix SSH restriction (remove & re-apply)   ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  [2] ⟹  View current UFW firewall status         ${GREEN}│${NC}\n"
     else
         printf "${GREEN}│${NC}  [1] ⟹  Restrict SSH access to OpenVPN IPs       ${GREEN}│${NC}\n"
-        printf "${GREEN}│${NC}  [2] ⟹  View current SSH configuration           ${GREEN}│${NC}\n"
+        printf "${GREEN}│${NC}  [2] ⟹  View current UFW firewall status         ${GREEN}│${NC}\n"
     fi
     
     printf "${GREEN}│${NC}  [0] ⟹  ${lang_cancel_action}                            ${GREEN}│${NC}\n"
@@ -172,13 +242,21 @@ do
     
     case ${CHOICE} in
         1) 
-            if check_ssh_restriction; then
+            if check_ssh_restriction && verify_ssh_restriction; then
                 clear
                 printf "\n${RED}Are you sure you want to remove SSH access restriction? [y/N]:${NC} "
                 read -r confirm
                 if [[ "${confirm}" =~ ^[Yy]$ ]]; then
                     unrestrict_ssh_access
                 fi
+            elif [[ -f /var/tinycp/ssh_restricted ]] && ! verify_ssh_restriction; then
+                clear
+                printf "\n${YELLOW}Fixing SSH restriction (removing corrupted UFW rules and re-applying)...${NC}\n"
+                # Remove corrupted restriction
+                unrestrict_ssh_access
+                sleep 2
+                # Re-apply restriction
+                restrict_ssh_access
             else
                 clear
                 restrict_ssh_access
@@ -186,12 +264,12 @@ do
             ;;
         2) 
             clear
-            printf "\n${GREEN}Current SSH Configuration:${NC}\n"
-            printf "${GREEN}=========================${NC}\n"
-            cat /etc/ssh/sshd_config | grep -A 20 -B 5 "TinyCP\|Match\|Allow\|Deny" || echo "No TinyCP restrictions found"
-            printf "\n${GREEN}SSH Service Status:${NC}\n"
+            printf "\n${GREEN}Current UFW Firewall Status:${NC}\n"
+            printf "${GREEN}============================${NC}\n"
+            ufw status numbered
+            printf "\n${GREEN}SSH-related rules:${NC}\n"
             printf "${GREEN}==================${NC}\n"
-            systemctl status sshd --no-pager
+            ufw status | grep -E "22|ssh" || echo "No SSH rules found"
             printf "\n"
             read -r -p "Press any key to continue..." 
             ;;
