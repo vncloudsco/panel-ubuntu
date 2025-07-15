@@ -1,0 +1,437 @@
+#!/bin/bash
+
+######################################################################
+#           Auto Install & Optimize LEMP Stack on Ubuntu             #
+#                                                                    #
+#                Author: TinyActive - Base On HOSTVN.VN Scripts      #
+#                  Website: https://github.com/TinyActive/panel      #
+#                                                                    #
+#              Please do not remove copyright. Thank!                #
+#  Please do not copy under any circumstance for commercial reason!  #
+######################################################################
+
+# TinyCP OpenVPN Installer - Automated OpenVPN installation with default settings
+# Based on: https://github.com/Nyr/openvpn-install
+
+source /var/tinycp/.tinycp.conf
+source /var/tinycp/menu/helpers/variable_common
+source /var/tinycp/menu/lang/"${lang}"
+
+# Default configuration
+DEFAULT_PORT="1194"
+DEFAULT_PROTOCOL="udp"
+DEFAULT_DNS="1"  # System resolvers
+DEFAULT_CLIENT="client"
+
+# Detect Debian users running the script with "sh" instead of bash
+if readlink /proc/$$/exe | grep -q "dash"; then
+    echo 'This installer needs to be run with "bash", not "sh".'
+    exit 1
+fi
+
+# Detect OS
+if grep -qs "ubuntu" /etc/os-release; then
+    os="ubuntu"
+    os_version=$(grep 'VERSION_ID' /etc/os-release | cut -d '"' -f 2 | tr -d '.')
+    group_name="nogroup"
+elif [[ -e /etc/debian_version ]]; then
+    os="debian"
+    os_version=$(grep -oE '[0-9]+' /etc/debian_version | head -1)
+    group_name="nogroup"
+else
+    echo "This installer only supports Ubuntu and Debian."
+    exit 1
+fi
+
+if [[ "$os" == "ubuntu" && "$os_version" -lt 2004 ]]; then
+    echo "Ubuntu 20.04 or higher is required to use this installer."
+    exit 1
+fi
+
+if [[ "$os" == "debian" && "$os_version" -lt 11 ]]; then
+    echo "Debian 11 or higher is required to use this installer."
+    exit 1
+fi
+
+# Check if running as root
+if [[ "$EUID" -ne 0 ]]; then
+    echo "This installer needs to be run with superuser privileges."
+    exit 1
+fi
+
+# Check TUN device
+if [[ ! -e /dev/net/tun ]] || ! ( exec 7<>/dev/net/tun ) 2>/dev/null; then
+    echo "The system does not have the TUN device available."
+    echo "TUN needs to be enabled before running this installer."
+    exit 1
+fi
+
+# Function to install OpenVPN
+install_openvpn() {
+    printf "\n${GREEN}Starting automated OpenVPN installation...${NC}\n"
+    
+    # Check if OpenVPN is already installed
+    if [[ -e /etc/openvpn/server/server.conf ]]; then
+        printf "${RED}OpenVPN is already installed.${NC}\n"
+        return 1
+    fi
+    
+    # Detect some Debian minimal setups where neither wget nor curl are installed
+    if ! hash wget 2>/dev/null && ! hash curl 2>/dev/null; then
+        printf "${GREEN}Wget is required to use this installer.${NC}\n"
+        printf "${GREEN}Installing Wget...${NC}\n"
+        apt-get update
+        apt-get install -y wget
+    fi
+    
+    # Install required packages
+    printf "${GREEN}Installing required packages...${NC}\n"
+    if [[ "$os" = "debian" || "$os" = "ubuntu" ]]; then
+        apt-get update
+        apt-get install -y --no-install-recommends openvpn openssl ca-certificates iptables
+    fi
+    
+    # Get server IP automatically
+    printf "${GREEN}Detecting server IP...${NC}\n"
+    if [[ $(ip -4 addr | grep inet | grep -vEc '127(\.[0-9]{1,3}){3}') -eq 1 ]]; then
+        ip=$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}')
+    else
+        # Use the first non-localhost IP
+        ip=$(ip -4 addr | grep inet | grep -vE '127(\.[0-9]{1,3}){3}' | cut -d '/' -f 1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}' | head -1)
+    fi
+    
+    # If private IP, get public IP
+    if echo "$ip" | grep -qE '^(10\.|172\.1[6789]\.|172\.2[0-9]\.|172\.3[01]\.|192\.168)'; then
+        printf "${GREEN}Detecting public IP...${NC}\n"
+        public_ip=$(curl -4 -s ifconfig.co 2>/dev/null || curl -4 -s icanhazip.com 2>/dev/null || echo "$ip")
+        if [[ -n "$public_ip" ]]; then
+            ip="$public_ip"
+        fi
+    fi
+    
+    printf "${GREEN}Using IP: ${ip}${NC}\n"
+    
+    # Set default values
+    protocol="$DEFAULT_PROTOCOL"
+    port="$DEFAULT_PORT"
+    dns="$DEFAULT_DNS"
+    client="$DEFAULT_CLIENT"
+    
+    # Get easy-rsa
+    printf "${GREEN}Downloading and setting up Easy-RSA...${NC}\n"
+    easy_rsa_url='https://github.com/OpenVPN/easy-rsa/releases/download/v3.2.3/EasyRSA-3.2.3.tgz'
+    mkdir -p /etc/openvpn/server/easy-rsa/
+    
+    { wget -qO- "$easy_rsa_url" 2>/dev/null || curl -sL "$easy_rsa_url" ; } | tar xz -C /etc/openvpn/server/easy-rsa/ --strip-components 1
+    
+    chown -R root:root /etc/openvpn/server/easy-rsa/
+    cd /etc/openvpn/server/easy-rsa/
+    
+    # Create the PKI, set up the CA and create TLS key
+    printf "${GREEN}Setting up PKI and certificates...${NC}\n"
+    ./easyrsa --batch init-pki
+    ./easyrsa --batch build-ca nopass
+    ./easyrsa gen-tls-crypt-key
+    
+    # Create the DH parameters file using the predefined ffdhe2048 group
+    echo '-----BEGIN DH PARAMETERS-----
+MIIBCAKCAQEA//////////+t+FRYortKmq/cViAnPTzx2LnFg84tNpWp4TZBFGQz
++8yTnc4kmz75fS/jY2MMddj2gbICrsRhetPfHtXV/WVhJDP1H18GbtCFY2VVPe0a
+87VXE15/V8k1mE8McODmi3fipona8+/och3xWKE2rec1MKzKT0g6eXq8CrGCsyT7
+YdEIqUuyyOP7uWrat2DX9GgdT0Kj3jlN9K5W7edjcrsZCwenyO4KbXCeAvzhzffi
+7MA0BM0oNC9hkXL+nOmFg/+OTxIy7vKBg8P+OxtMb61zO7X8vC7CIAXFjvGDfRaD
+ssbzSibBsu/6iGtCOGEoXJf//////////wIBAg==
+-----END DH PARAMETERS-----' > /etc/openvpn/server/dh.pem
+    
+    # Make easy-rsa aware of our external DH file
+    ln -s /etc/openvpn/server/dh.pem pki/dh.pem
+    
+    # Create certificates and CRL
+    printf "${GREEN}Creating server and client certificates...${NC}\n"
+    ./easyrsa --batch --days=3650 build-server-full server nopass
+    ./easyrsa --batch --days=3650 build-client-full "$client" nopass
+    ./easyrsa --batch --days=3650 gen-crl
+
+    # Move the stuff we need
+    cp pki/ca.crt pki/private/ca.key pki/issued/server.crt pki/private/server.key pki/crl.pem /etc/openvpn/server
+    cp pki/private/easyrsa-tls.key /etc/openvpn/server/tc.key
+    
+    # CRL is read with each client connection, while OpenVPN is dropped to nobody
+    chown nobody:"$group_name" /etc/openvpn/server/crl.pem
+    chmod o+x /etc/openvpn/server/
+    
+    # Generate server.conf
+    printf "${GREEN}Creating server configuration...${NC}\n"
+    echo "local $ip
+port $port
+proto $protocol
+dev tun
+ca ca.crt
+cert server.crt
+key server.key
+dh dh.pem
+auth SHA512
+tls-crypt tc.key
+topology subnet
+server 10.8.0.0 255.255.255.0
+push \"redirect-gateway def1 bypass-dhcp\"
+ifconfig-pool-persist ipp.txt" > /etc/openvpn/server/server.conf
+    
+    # DNS configuration - use system resolvers
+    resolv_conf="/etc/resolv.conf"
+    if grep '^nameserver' "/etc/resolv.conf" | grep -qv '127.0.0.53'; then
+        resolv_conf="/etc/resolv.conf"
+    else
+        resolv_conf="/run/systemd/resolve/resolv.conf"
+    fi
+    
+    # Add DNS servers
+    grep -v '^#\|^;' "$resolv_conf" | grep '^nameserver' | grep -v '127.0.0.53' | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}' | while read line; do
+        echo "push \"dhcp-option DNS $line\"" >> /etc/openvpn/server/server.conf
+    done
+    
+    # Add remaining server configuration
+    echo 'push "block-outside-dns"
+keepalive 10 120
+user nobody
+group '$group_name'
+persist-key
+persist-tun
+verb 3
+crl-verify crl.pem
+explicit-exit-notify' >> /etc/openvpn/server/server.conf
+    
+    # Enable net.ipv4.ip_forward
+    printf "${GREEN}Enabling IP forwarding...${NC}\n"
+    echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-openvpn-forward.conf
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+    
+    # Set up iptables rules
+    printf "${GREEN}Setting up firewall rules...${NC}\n"
+    iptables_path=$(command -v iptables)
+    
+    echo "[Unit]
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=$iptables_path -t nat -A POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to $ip
+ExecStart=$iptables_path -I INPUT -p $protocol --dport $port -j ACCEPT
+ExecStart=$iptables_path -I FORWARD -s 10.8.0.0/24 -j ACCEPT
+ExecStart=$iptables_path -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+ExecStop=$iptables_path -t nat -D POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to $ip
+ExecStop=$iptables_path -D INPUT -p $protocol --dport $port -j ACCEPT
+ExecStop=$iptables_path -D FORWARD -s 10.8.0.0/24 -j ACCEPT
+ExecStop=$iptables_path -D FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/openvpn-iptables.service
+    
+    systemctl enable --now openvpn-iptables.service >/dev/null 2>&1
+    
+    # If the server is behind NAT, use the correct IP address
+    [[ -n "$public_ip" ]] && ip="$public_ip"
+    
+    # Create client configuration template
+    echo "client
+dev tun
+proto $protocol
+remote $ip $port
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+auth SHA512
+ignore-unknown-option block-outside-dns
+verb 3" > /etc/openvpn/server/client-common.txt
+    
+    # Enable and start OpenVPN service
+    printf "${GREEN}Starting OpenVPN service...${NC}\n"
+    systemctl enable --now openvpn-server@server.service
+    
+    # Create client configuration file
+    printf "${GREEN}Creating client configuration...${NC}\n"
+    mkdir -p /var/tinycp/openvpn_configs
+    
+    # Build the client.ovpn file, stripping comments from easy-rsa in the process
+    client_config_file="/var/tinycp/openvpn_configs/${client}.ovpn"
+    grep -vh '^#' /etc/openvpn/server/client-common.txt /etc/openvpn/server/easy-rsa/pki/inline/private/"$client".inline > "$client_config_file"
+    
+    # Create status files for TinyCP
+    echo "installed" > /var/tinycp/openvpn_status
+    echo "$(date)" >> /var/tinycp/openvpn_status
+    echo "10.8.0.0/24" > /var/tinycp/openvpn_subnet
+    
+    printf "\n${GREEN}OpenVPN installation completed successfully!${NC}\n"
+    printf "${GREEN}Server IP: ${ip}${NC}\n"
+    printf "${GREEN}Port: ${port}${NC}\n"
+    printf "${GREEN}Protocol: ${protocol}${NC}\n"
+    printf "${GREEN}Client config: ${client_config_file}${NC}\n"
+    printf "${GREEN}OpenVPN subnet: 10.8.0.0/24${NC}\n"
+    
+    return 0
+}
+
+# Function to uninstall OpenVPN
+uninstall_openvpn() {
+    printf "\n${GREEN}Uninstalling OpenVPN...${NC}\n"
+    
+    if [[ ! -e /etc/openvpn/server/server.conf ]]; then
+        printf "${RED}OpenVPN is not installed.${NC}\n"
+        return 1
+    fi
+    
+    # Stop and disable services
+    systemctl stop openvpn-server@server.service >/dev/null 2>&1
+    systemctl disable openvpn-server@server.service >/dev/null 2>&1
+    systemctl stop openvpn-iptables.service >/dev/null 2>&1
+    systemctl disable openvpn-iptables.service >/dev/null 2>&1
+    
+    # Remove iptables rules
+    port=$(grep '^port ' /etc/openvpn/server/server.conf | cut -d " " -f 2)
+    protocol=$(grep '^proto ' /etc/openvpn/server/server.conf | cut -d " " -f 2)
+    ip=$(grep '^local ' /etc/openvpn/server/server.conf | cut -d " " -f 2)
+    
+    iptables -t nat -D POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to "$ip" 2>/dev/null
+    iptables -D INPUT -p "$protocol" --dport "$port" -j ACCEPT 2>/dev/null
+    iptables -D FORWARD -s 10.8.0.0/24 -j ACCEPT 2>/dev/null
+    iptables -D FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null
+    
+    # Remove files and directories
+    rm -rf /etc/openvpn/server
+    rm -f /etc/systemd/system/openvpn-iptables.service
+    rm -f /etc/sysctl.d/99-openvpn-forward.conf
+    rm -rf /var/tinycp/openvpn_configs
+    
+    # Remove status files
+    rm -f /var/tinycp/openvpn_status
+    rm -f /var/tinycp/openvpn_subnet
+    rm -f /var/tinycp/ssh_restricted
+    rm -f /var/tinycp/web_restricted_*
+    rm -f /var/tinycp/dir_restricted_*
+    
+    # Remove OpenVPN package
+    apt-get remove --purge -y openvpn >/dev/null 2>&1
+    
+    printf "\n${GREEN}OpenVPN uninstalled successfully!${NC}\n"
+    
+    return 0
+}
+
+# Function to add new client
+add_client() {
+    if [[ ! -e /etc/openvpn/server/server.conf ]]; then
+        printf "${RED}OpenVPN is not installed.${NC}\n"
+        return 1
+    fi
+    
+    # Check and repair installation if needed
+    if ! check_and_repair_openvpn; then
+        printf "${RED}OpenVPN installation check failed.${NC}\n"
+        return 1
+    fi
+    
+    printf "\n${GREEN}Enter client name: ${NC}"
+    read -r client_name
+    
+    # Sanitize client name
+    client_name=$(sed 's/[^0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-]/_/g' <<< "$client_name")
+    
+    if [[ -z "$client_name" ]]; then
+        printf "${RED}Invalid client name.${NC}\n"
+        return 1
+    fi
+    
+    if [[ -e /etc/openvpn/server/easy-rsa/pki/issued/"$client_name".crt ]]; then
+        printf "${RED}Client already exists.${NC}\n"
+        return 1
+    fi
+    
+    printf "${GREEN}Creating client certificate for: ${client_name}${NC}\n"
+    
+    cd /etc/openvpn/server/easy-rsa/
+    ./easyrsa --batch --days=3650 build-client-full "$client_name" nopass
+    
+    # Create client config
+    mkdir -p /var/tinycp/openvpn_configs
+    client_config_file="/var/tinycp/openvpn_configs/${client_name}.ovpn"
+    
+    # Build the client.ovpn file, stripping comments from easy-rsa in the process
+    grep -vh '^#' /etc/openvpn/server/client-common.txt /etc/openvpn/server/easy-rsa/pki/inline/private/"$client_name".inline > "$client_config_file"
+    
+    printf "\n${GREEN}Client added successfully!${NC}\n"
+    printf "${GREEN}Config file: ${client_config_file}${NC}\n"
+    
+    return 0
+}
+
+# Function to check and repair OpenVPN installation
+check_and_repair_openvpn() {
+    if [[ ! -e /etc/openvpn/server/server.conf ]]; then
+        return 1
+    fi
+    
+    printf "${GREEN}Checking OpenVPN installation...${NC}\n"
+    
+    # Check if tc.key exists
+    if [[ ! -f /etc/openvpn/server/tc.key ]]; then
+        printf "${YELLOW}TLS Crypt key missing, generating...${NC}\n"
+        
+        cd /etc/openvpn/server/easy-rsa/
+        
+        # Generate new TLS crypt key
+        ./easyrsa gen-tls-crypt-key >/dev/null 2>&1
+        
+        if [[ -f pki/private/easyrsa-tls.key ]]; then
+            cp pki/private/easyrsa-tls.key /etc/openvpn/server/tc.key
+            printf "${GREEN}TLS Crypt key generated successfully.${NC}\n"
+        else
+            printf "${RED}Failed to generate TLS Crypt key.${NC}\n"
+            return 1
+        fi
+    fi
+    
+    # Check other essential files
+    local missing_files=()
+    
+    if [[ ! -f /etc/openvpn/server/ca.crt ]]; then
+        missing_files+=("ca.crt")
+    fi
+    
+    if [[ ! -f /etc/openvpn/server/server.crt ]]; then
+        missing_files+=("server.crt")
+    fi
+    
+    if [[ ! -f /etc/openvpn/server/server.key ]]; then
+        missing_files+=("server.key")
+    fi
+    
+    if [[ ${#missing_files[@]} -gt 0 ]]; then
+        printf "${RED}Missing essential files: ${missing_files[*]}${NC}\n"
+        printf "${RED}OpenVPN installation is corrupted. Please reinstall.${NC}\n"
+        return 1
+    fi
+    
+    printf "${GREEN}OpenVPN installation is OK.${NC}\n"
+    return 0
+}
+
+# Main execution
+case "${1}" in
+    "install")
+        install_openvpn
+        ;;
+    "uninstall")
+        uninstall_openvpn
+        ;;
+    "add-client")
+        add_client
+        ;;
+    *)
+        echo "Usage: $0 {install|uninstall|add-client}"
+        exit 1
+        ;;
+esac
